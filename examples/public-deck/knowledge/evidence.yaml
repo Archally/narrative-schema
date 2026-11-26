@@ -1,0 +1,16 @@
+version: "1.0.0"
+evidence:
+  - id: E001
+    title: "Three-surface validation parity check"
+    kind: internal
+    citation: "CLI validate, MCP get_validation, and the standalone schema validator report the exact same verdict and source paths."
+    backs_claims: [CLM001]
+    supports_concepts: [C001]
+    used_in_scenes: [SC002]
+  - id: E002
+    title: "Presentation IR cross-reference verification"
+    kind: benchmark
+    citation: "validate-presentation.mjs confirms every slide scene_ref, claim_ref, concept_ref, asset_ref, and evidence_ref exists in the authored model."
+    backs_claims: [CLM002]
+    supports_concepts: [C002]
+    used_in_scenes: [SC003]

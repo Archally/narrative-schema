@@ -1,0 +1,244 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:views:1.0.0"
+title: "Narrative Views (Markdown view definitions for the model query tools)"
+description: "Describe intended Markdown views over a narrative graph for readers who need a focused summary."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for the modeled view contracts."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  defaults:
+    description: "Set shared retrieval and presentation preferences for the modeled templates."
+    examples:
+      - budget_tokens: 1000
+        include_refs: true
+        include_evidence: true
+        include_unknowns: true
+        ordering: stable
+    type: object
+    additionalProperties: false
+    properties:
+      budget_tokens: { type: integer, minimum: 100, maximum: 20000, description: "Default token budget for the modeled Markdown output." }
+      include_refs: { type: boolean, default: true, description: "Whether views should show links to source entities by default." }
+      include_evidence: { type: boolean, default: true, description: "Whether views should surface evidence supporting displayed claims." }
+      include_unknowns: { type: boolean, default: true, description: "Whether views should report gaps in the available material." }
+      ordering:
+        type: string
+        enum: [stable, relevance]
+        description: "Choose deterministic ordering or allow relevance-based ranking."
+    required: [budget_tokens]
+
+  view_templates:
+    examples:
+      - - id: VW001
+          name: Evidence for the rollback claim
+          view_type: claims_map
+          scope:
+            applies_to: claim
+            required_params:
+              - claim_id
+          input:
+            retrieval_mode: neighbors
+            depth: 1
+            node_type_allowlist:
+              - claim
+              - evidence
+          rendering:
+            budget_tokens: 600
+            sections:
+              - id: title
+              - id: evidence
+                max_items: 4
+              - id: refs
+            priority:
+              node_type_priority:
+                - claim
+                - evidence
+            refs_policy:
+              require_refs_section: true
+          output_contract:
+            must_include:
+              - title
+              - refs
+            max_chars: 2400
+    type: array
+    description: >
+      Named contracts for proposed Markdown views. The model query tools read authored views
+      as scene outlines, claim coverage and film readiness; those queries take their own
+      arguments and do not render by template ID.
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          description: "Stable identifier for referring to this modeled view contract."
+          type: string
+          pattern: "^VW[0-9]{3}$"
+
+        name:
+          type: string
+          description: "Label that tells the reader what question the view answers."
+
+        view_type:
+          type: string
+          description: "Choose the expected view shape from the modeled vocabulary."
+          enum:
+            - narrative_at_a_glance
+            - scene_view
+            - scene_flow
+            - claims_map
+            - concepts_glossary
+            - qa_pack
+            - rehearsal_checklist
+            - change_summary
+            - subgraph_summary
+
+        scope:
+          examples:
+            - applies_to: claim
+              required_params:
+                - claim_id
+          type: object
+          additionalProperties: false
+          description: "Describe the object this view is intended to summarize."
+          properties:
+            applies_to:
+              description: "Choose the kind of object the reader starts from."
+              type: string
+              enum: [narrative, plane, scene, claim, concept, subgraph, change]
+            required_params:
+              description: "Name the inputs a caller would supply to select the scope."
+              type: array
+              items:
+                type: string
+                enum: [scene_id, claim_id, concept_id, seed_ids, decision_id, migration_id]
+          required: [applies_to]
+
+        input:
+          type: object
+          additionalProperties: false
+          description: "Describe the graph retrieval needed to populate this view."
+          properties:
+            retrieval_mode:
+              description: "Choose the graph traversal suited to the reader's question."
+              type: string
+              enum: [node, neighbors, subgraph, layer]
+            depth: { type: integer, minimum: 0, maximum: 10, description: "Maximum number of graph hops from the starting nodes." }
+            max_nodes: { type: integer, minimum: 1, maximum: 5000, description: "Cap the number of nodes returned by retrieval." }
+            max_edges: { type: integer, minimum: 0, maximum: 20000, description: "Cap the number of relationships returned by retrieval." }
+            node_type_allowlist:
+              type: array
+              items: { type: string }
+              description: "Limit retrieval to the entity types relevant to the view."
+            edge_type_allowlist:
+              description: "Limit retrieval to relationships that answer the reader's question."
+              type: array
+              items: { type: string }
+            layer_allowlist:
+              type: array
+              items: { type: string }
+              description: "Limit retrieval to relevant layers such as claims or evidence."
+            plane_allowlist:
+              type: array
+              items:
+                type: string
+                enum: [intent, knowledge, orchestration, delivery, assurance]
+              description: "Limit retrieval to the authored planes this view reads."
+          required: [retrieval_mode]
+
+        rendering:
+          type: object
+          additionalProperties: false
+          description: "Describe the Markdown sections and rules for fitting the output budget."
+          properties:
+            budget_tokens:
+              description: "Token budget for this particular view's Markdown output."
+              type: integer
+              minimum: 100
+              maximum: 20000
+
+            sections:
+              type: array
+              description: "List the Markdown sections in the order readers should encounter them."
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  id:
+                    description: "Select the content the section should present to readers."
+                    type: string
+                    enum: [title, summary, key_points, key_triples, refs, evidence, unknowns, next_actions]
+                  optional: { type: boolean, default: false, description: "Mark sections that can be dropped when space is limited." }
+                  max_items: { type: integer, minimum: 1, maximum: 200, description: "Limit how many entries this section should display." }
+                required: [id]
+
+            priority:
+              type: object
+              additionalProperties: false
+              description: "What content to keep first under token pressure."
+              properties:
+                node_type_priority:
+                  type: array
+                  items: { type: string }
+                  description: "e.g., [scene, claim, concept, asset, evidence]"
+                edge_type_priority:
+                  description: "Rank which relationship types to keep first under token pressure."
+                  type: array
+                  items: { type: string }
+                field_priority:
+                  type: array
+                  items: { type: string }
+                  description: "e.g., ['title','summary','definition','strength','spoken_text']"
+              required: [node_type_priority]
+
+            refs_policy:
+              description: "Describe how readers can trace view content to modeled sources."
+              type: object
+              additionalProperties: false
+              properties:
+                require_refs_section: { type: boolean, default: true, description: "Whether to require a dedicated section of entity references." }
+                inline_refs: { type: boolean, default: true, description: "Whether to place source identifiers alongside the relevant prose." }
+                include_source_paths: { type: boolean, default: false, description: "Whether to show where each referenced record is stored." }
+              required: [require_refs_section]
+
+            safety:
+              type: object
+              additionalProperties: false
+              description: "Optional policies to prevent unsafe or off-brand content in views."
+              properties:
+                forbid_topics:
+                  description: "List topics to omit for this view's intended audience."
+                  type: array
+                  items: { type: string }
+                style_constraints:
+                  description: "List wording or tone constraints for the proposed output."
+                  type: array
+                  items: { type: string }
+          required: [budget_tokens, sections, priority, refs_policy]
+
+        output_contract:
+          examples:
+            - must_include:
+                - title
+                - refs
+              max_chars: 2400
+          type: object
+          additionalProperties: false
+          description: "Output invariants that tests can enforce."
+          properties:
+            must_include:
+              description: "List the elements that must appear in the proposed output."
+              type: array
+              items:
+                type: string
+                enum: [refs, title, summary]
+            max_chars: { type: integer, minimum: 200, maximum: 200000, description: "Set a character limit for the complete Markdown output." }
+          required: [must_include]
+
+      required: [id, name, view_type, scope, input, rendering, output_contract]
+
+required: [version, defaults, view_templates]

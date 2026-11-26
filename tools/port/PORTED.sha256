@@ -1,0 +1,109 @@
+# PORTED.sha256 - shipped file integrity.
+# SHA-256 over LF-normalized UTF-8 content.
+# job schema schema/v1.5
+# job validator tools/validator
+# job port tools/port
+# job example-public-deck examples/public-deck
+# job example-walkthrough examples/walkthrough
+# job docs docs
+# file examples-readme examples/README.md
+# file package package.json
+# file lockfile package-lock.json
+# file readme README.md
+# file changelog CHANGELOG.md
+# file contributing CONTRIBUTING.md
+# file terms LICENSE
+# file terms-apache LICENSE-APACHE
+# file terms-fsl LICENSE-FSL
+# file notice NOTICE
+# file tools-terms tools/LICENSE
+# file tools-readme tools/README.md
+# file line-endings .gitattributes
+# file ignore .gitignore
+# file ci-validate .github/workflows/validate.yml
+# absent publication.manifest.yaml
+# absent schema/v1.5/presentation/AI-BREAKFEST-MAPPING.md
+# absent schema/v1.5/presentation/DETERMINISM.md
+# absent schema/v1.5/presentation/examples
+# absent schema/v1.5/CHANGELOG.md
+# absent schema/v1.5/README.md
+# absent tools/validation
+# absent tools/core
+# absent tools/cli
+# absent tools/mcp
+# absent tools/proof-runtime
+# absent tools/narrative-generator
+# absent tools/ffactory
+# absent tools/flow-graph
+# absent tools/semantic-checker
+# absent kit/skills
+# absent kit/agents
+# absent examples/branching-minimal
+# absent examples/film-minimal
+# absent tools/model-improvement
+# covered schema
+# covered tools
+# covered docs
+# covered examples
+
+68471c25b0aac9c0782d3207021b50c73edd6d070b842800bd0eecfc0cb871e7  changelog/CHANGELOG.md
+12392cd734cffcdb0e1bf667c0dd888bed2ffc3b7a3bb44794e56f28a7b77384  ci-validate/validate.yml
+f094ba4849e082994aa50328ccbf5d60b55131a2b9afdeb199b93c1ff33798c1  contributing/CONTRIBUTING.md
+350463ef09688ee22741731eba9dc980a824c926c6f7f574799075297619c985  docs/README.md
+aa16cb3b516dd94d05edc66995492de75b8f3887a5b5914c4fe9ceb2cad82311  example-public-deck/delivery/script.en-US.yaml
+fb359b9519ef852eb4056ac3dda79968ca87ba170575af3ce2dda59809f7d2b3  example-public-deck/delivery/variants.yaml
+08d54bfcd46279697743204212ccf9fc451791ddf053ed2238819f529b4edffa  example-public-deck/intent/intent.yaml
+0d7a35fc5c0edd1d3b63f70155b906179d6787ec87fde6bb1dd4e0909a21a190  example-public-deck/knowledge/assets.yaml
+08639bf54fd6f0b31674984a6fd72d5cae94fe3d976644e464252da0158892cb  example-public-deck/knowledge/claims.yaml
+45d2ec5eec8302d41498c2e0dddaeb271a3db9392e8368dddb6e1176cfd4e0af  example-public-deck/knowledge/concepts.yaml
+7a4c48eddb94a2915b7160ac6a4006eb5979dd8173bcbdd638eb09256ffb241a  example-public-deck/knowledge/evidence.yaml
+5f798e38f8a87e3f143c1dca67f175ec13f8544bde097676c487a4887656ed81  example-public-deck/media/pipeline-overview.svg
+18aaf4ff79cb8be6bf3552590b1ac749f006922602542a0291b92684789c5a92  example-public-deck/narrative.yaml
+06c86b2037459f84a230ce680bc63c9caa0c199014988a1eaa244363fbe602f1  example-public-deck/orchestration/scenes.yaml
+34cb9ef25aea0d3d48ece8d34fed38f93f012eb8f1aecba2a85a0173d7ed05c5  example-walkthrough/2026-11-25-revise-a-claim.md
+027a5c04230fce7a3df3538ba03e1394edcfa3e2b74841989cf6eb76080c4015  examples-readme/README.md
+1af166ac49869b9ac380095c8a7aac1989558cbb4d2674f3559b11f0093120a6  ignore/.gitignore
+d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c  line-endings/.gitattributes
+716fad8870dfe543f16ae0a10df0a3c13de695eb9ee535adf910c9321d10fd7b  lockfile/package-lock.json
+5b3322c644aabb1d8b7013b87f7040f8ee5218295b661583195f282f1757cadd  notice/NOTICE
+b7a86e49109809ade21a150890cba8911d1ecad0e9187e41f1d707e233054dc6  package/package.json
+a463bf61630ce41a2cf4452c54a9f88c4cfc7b451e62703929e3e8a5697a64b8  port/integrity.mjs
+107816324f75dc8a262fb46ae7fa6f65e86038e3540c28ecfdd57808e5198433  port/project-schema.mjs
+b07dd0e843398dd4a597ed15bc689c814fa72a0c1faf64ac462c85a1a3129672  port/project-schema.test.mjs
+dd78de5c521300349e26c44ad840ee778a7191a97ebcf09afd6b4fe506aea293  port/release-check.mjs
+eacdf638626e8aa5a86093c9ff660ac06d713de6018f0a71deb62a746db05074  port/release-check.test.mjs
+d1ed4b7ad6455db83905f7d92968ff2fbf15016a3d3754f9b64ca076a239dca4  port/verify-ported.mjs
+07c81a0e39ea634e9deda17fe104380e84f239990c8623daf9f4f96e899e14db  port/verify-ported.test.mjs
+2ba2877b3013b5f7ab81419b4f4fa897422a379edfa1897ea192dd7be25e9a79  readme/README.md
+ee489df24f94705515eeef2e75b12272a3a7f827193d0802ba51574262b90f64  schema/assurance/narrative.qa.schema.yaml
+5ecc8930c7cd802481a87e81bae32035f5f12afea5bd00cc78e021294536250b  schema/assurance/narrative.rehearsal.schema.yaml
+0efd190e60da6cf01b4d9c6489afa747fcf34124cc4c2a859fa3a7e881484f71  schema/assurance/narrative.views.schema.yaml
+f3f7dd81f57716d3eff51f90f56703651387fdee0b781febe1e7ca4202c657e9  schema/delivery/narrative.script.schema.yaml
+ddc52699a9852f31f3013eaa0e142020149d2d5300fbf7d902cba29c535870c6  schema/delivery/narrative.variants.schema.yaml
+cfd635ed2b0836cca97a4ab539ce423794daf83ef4eefeaca69726041fce6e21  schema/intent/narrative.intent.schema.yaml
+64feaa61b801a6c87e56d7c00971ad17c1f870cd3bcc76c80a8e67ec53d6c7c3  schema/knowledge/narrative.assets.schema.yaml
+13f8f22b3a94d425439da61dd7b59c56bf0f131f4c7f7fa6f472261d350bae35  schema/knowledge/narrative.claims.schema.yaml
+6428c0887412a2c8885971f86796682fde82403c0ab497bc4221232592af0a87  schema/knowledge/narrative.concepts.schema.yaml
+2f9f405996db1e85c47b1a05a13dded713d26b1d2b5bd6a04de82e6546ad7c0a  schema/knowledge/narrative.evidence.schema.yaml
+d0df0950eae3577d0342872dcb24ccde05d46490d79869870bb92005a1c7aefa  schema/narrative.metamodel.schema.yaml
+5e5f34aae331c95533003e2241b3c3eaf2a506729199a1d25a347c38f9499052  schema/narrative.talk.schema.yaml
+f4fef90664f4ab35ba4061ae6afd7386a6d466e0f1816c1d45fef126bda4c0cb  schema/orchestration/narrative.film.schema.yaml
+29e1b23a8ee2c0d81e88b48b642e6ecbec8909ec9d82962b8679d9b9130cce7d  schema/orchestration/narrative.scenes.schema.yaml
+146a7a589c0fb68791c1d3082e5e18af347582ca3f78629b20fadfe5ec3b1ed8  schema/orchestration/narrative.scenes.v1.1.schema.yaml
+e3af6f0891c59b4b8626ba9b23638b635193fe14aff7ebf7b94e9349c8314afc  schema/presentation/narrative.film-ir.schema.yaml
+35e6f2b8e689ce12f65b5f82b4c25c0c36212324f9bd14e3dba800f2eeb5c136  schema/presentation/narrative.presentation.schema.yaml
+a4734b44f3845b097d8dc90f6ca2f6ff051e0ffc9a08bc627ae19fdf6cc07c22  schema/presentation/narrative.visual-config.schema.yaml
+05906facc15087cbf26b6367f3fe5aa74387ab66f7fb58a67a16656cc72ca742  terms-apache/LICENSE-APACHE
+4ddc617c18982535f06b579502aba3c2f5a0aebe67183e741102aa924180b6d3  terms-fsl/LICENSE-FSL
+925d0f43f887128b0c0ca74a4bf4681002145f3fb4089746d02070449bf199fc  terms/LICENSE
+a67cceb2eee77feb718465aa2d678850a291b29ded3b1273e02a9761a5f7757e  tools-readme/README.md
+ff0ee29174a39075cfd10932af2afce8ad55e6acc9b0eb174dd3ae9a993c20d0  tools-terms/LICENSE
+6bb18960cf4300f4d81f85b6b52cb78bb71647f0585145d35cac068758ab0dc9  validator/cli.mjs
+0558e17e094340004d85583a0ebeaa645d7210c4809effdf36744cc171bccc37  validator/core/baseline.mjs
+265158514f3a902312a15c7a34a955fdcfe6c193ded3e7a1a50a98cc0f48998f  validator/core/native-schema.mjs
+106f4295d10e9a9cb8fc3ae47e1bfade734e3212c25e92e7dba3c5d918927e55  validator/core/occurrences.mjs
+93fa2c31923e3e6200bca1f466b147a0dafbad3bbbe5ef6b9be148b8728afade  validator/core/reader.mjs
+b7c3527d06bd268fd34dcdcfa4ed3e9a75deda103abfe525a0502d20e976bc64  validator/core/source-status.mjs
+adf432ce14f2fc489cf8291868cbf853213a5930a5cdc17ff958ed3e5f9eff12  validator/index.mjs
+b508b0ef9fb7bfc6d8d352f9e49a4dbe179d9243643117fa8bfee1c9f83108a7  validator/README.md
+ed4333fe111f8db491f961f91360ada63aad9168d8f030531ef46f91a4568e05  validator/validator.test.mjs

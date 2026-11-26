@@ -1,0 +1,17 @@
+version: "1.0.0"
+claims:
+  - id: CLM001
+    title: "Resolving the manifest once prevents slide outlines and validation findings from drifting across tools."
+    strength: strong
+    supports_goals: [G001]
+    key_terms: [C001]
+    evidence_refs: [E001]
+    asset_refs: [A001]
+    scene_refs: [SC002]
+  - id: CLM002
+    title: "Every generated slide retains verifiable links back to its authored scene, claims, and evidence."
+    strength: strong
+    supports_goals: [G002]
+    key_terms: [C002]
+    evidence_refs: [E002]
+    scene_refs: [SC003]

@@ -1,0 +1,451 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:film-ir:1.0.0"
+title: "Narrative Film IR"
+description: >
+  One cut of a film, fully resolved: every shot in screen order with its picture and that picture's sha256, every text in the cut's language with its time, every transition with its length, and the provenance of each picture, so nothing is left to look up. It is a GENERATED artifact, normally at <narrative-root>/build/film.<DLV###>.yaml, projected from the narrative's film file, the cut's variant, the script in the cut's language, the assets and the film's design tokens. The same inputs give the same bytes. Every time is a whole number of milliseconds and never a frame number: frame rate is a renderer setting, so one IR renders at any frame rate. Paths are relative and never name a machine. Only a cut with no voice is timed: each length comes from a design token (reading time per text and the fades around it, the recognise hold, the silent-beat floor, the end-card extra, the scene lead-in and tail, the transition lengths), and an authored shot minimum only raises a length. A transition adds its length before the shot it introduces, while the outgoing picture is held, so no shot's reading time is spent on a fade. When a cut substitutes one asset for another, a shot that names the replaced asset shows the substitute; its texts stay with the shot, and the picture records both assets.
+type: object
+additionalProperties: false
+
+$defs:
+  milliseconds:
+    type: integer
+    minimum: 0
+    description: "A time or a length in whole milliseconds."
+    examples: [ 2640 ]
+
+  transition:
+    type: object
+    additionalProperties: false
+    description: >
+      How the shot replaces the previous one, and for how long. The transition occupies the `length_ms` before the shot's `start_ms`, during which the outgoing picture is held. A cut has length 0. The length is read from the design token the kind maps to: a crossfade takes the crossfade duration; a kind with no token in the token file cannot be timed, and the cut is not generated.
+    properties:
+      kind:
+        type: string
+        enum: [ cut, crossfade, fade_from_black, dip_to_black ]
+        description: "The shot's `transition_in`, or `cut` when the film file omits it."
+        examples: [ "crossfade" ]
+      length_ms:
+        $ref: "#/$defs/milliseconds"
+      start_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "When the transition starts on the cut's timeline; it ends at the shot's `start_ms`."
+    required: [ kind, length_ms, start_ms ]
+    examples:
+      - { kind: "crossfade", length_ms: 500, start_ms: 9440 }
+
+  render_address:
+    type: object
+    additionalProperties: false
+    description: >
+      The model projection output a picture was resolved from: the asset's render source, the project's render manifest whose output tree held it (its delivery manifest or its film manifest; exactly one output across both trees resolves an address), the stamp that manifest declared, and the build id the output's own provenance names, when one parses.
+    properties:
+      project: { type: string, description: "The project whose render manifest was read.", examples: [ "ecommerce" ] }
+      target: { type: string, description: "The render target id.", examples: [ "arch-map" ] }
+      scope: { type: string, description: "The slice; omitted for a whole-model output.", examples: [ "checkout" ] }
+      view: { type: string, description: "The view of the target.", examples: [ "context" ] }
+      theme: { type: string, enum: [ light, dark ], description: "The theme, when the address names one.", examples: [ "light" ] }
+      format: { type: string, enum: [ svg, png ], description: "The file format.", examples: [ "svg" ] }
+      stamp: { type: string, description: "The stamp of the render manifest the output was found under.", examples: [ "2026-10-01" ] }
+      manifest:
+        type: string
+        description: "The render manifest the output was found under, relative to the project directory."
+        examples: [ ".artifacts/render.manifest.yaml", ".artifacts/film.render.manifest.yaml" ]
+      build_id: { type: string, description: "The build id recorded inside the output, when one parses.", examples: [ "ad73686a7" ] }
+    required: [ project, target, view, format, stamp, manifest ]
+
+  picture:
+    type: object
+    additionalProperties: false
+    description: >
+      The picture a shot shows. `kind` is how a template draws it: `card` for a card composed from on-screen texts, `image` for an SVG or PNG (every render output is one), `text` for a YAML or JSON excerpt, `terminal` for captured command output, `video` for a video clip such as a screen recording. A file source's kind follows its extension: `.svg` and `.png` are `image`; `.yaml`, `.yml` and `.json` are `text`; `.txt`, `.log`, `.out` and `.diff` are `terminal`; `.mp4` is `video` (H.264 in an MP4 container, no audio track; any other clip is refused); any other extension is refused. `origin` says where the picture comes from: a resolved render address, a file the film project's render manifest rebuilds, or a file authored into the narrative.
+    properties:
+      kind:
+        type: string
+        enum: [ card, image, text, terminal, video ]
+        description: "How a template draws the picture."
+        examples: [ "image" ]
+      origin:
+        type: string
+        enum: [ card, render, manifest, authored ]
+        description: "Where the picture comes from."
+        examples: [ "render" ]
+      asset_ref:
+        type: string
+        pattern: "^A[0-9]{3}$"
+        description: "The asset shown in this cut, after any substitution."
+        examples: [ "A002" ]
+      layout:
+        type: string
+        description: "The card's layout key in the visual configuration."
+        examples: [ "end_card" ]
+      path:
+        type: string
+        description: "The picture file, relative to the narrative root, with forward slashes."
+        examples: [ "media/checkout-model.txt" ]
+      sha256:
+        type: string
+        pattern: "^[0-9a-f]{64}$"
+        description: "The sha256 of the picture file's bytes as the IR was generated."
+      bytes:
+        type: integer
+        minimum: 0
+        description: "The picture file's size in bytes."
+        examples: [ 214 ]
+      duration_ms:
+        $ref: "#/$defs/milliseconds"
+        description: >
+          How long a `video` clip plays, read from its container (the video track's edit list, else its media length), rounded to a millisecond. Present for `video` only.
+        examples: [ 4000 ]
+      alt:
+        type: string
+        description: "What the picture shows, from the asset's media."
+      file:
+        type: string
+        description: "The asset's file source, relative to the narrative root, for a file picture."
+        examples: [ "media/checkout-model.txt" ]
+      manifest_entry:
+        type: object
+        additionalProperties: false
+        description: "The film render manifest entry that rebuilds this picture."
+        properties:
+          manifest:
+            type: string
+            description: "The manifest file, relative to the narrative root."
+            examples: [ "../../.artifacts/render.manifest.yaml" ]
+          output:
+            type: string
+            description: "The entry's output path, equal to the asset's file source."
+            examples: [ "media/sc221-bp-node-prestashop-bd014.txt" ]
+        required: [ manifest, output ]
+      render:
+        $ref: "#/$defs/render_address"
+      substitution:
+        type: object
+        additionalProperties: false
+        description: "The cut's asset substitution that put this picture in the shot."
+        properties:
+          replace_ref:
+            type: string
+            pattern: "^A[0-9]{3}$"
+            description: "The asset the film file names for the shot."
+          with_ref:
+            type: string
+            pattern: "^A[0-9]{3}$"
+            description: "The asset this cut shows instead."
+        required: [ replace_ref, with_ref ]
+    required: [ kind, origin ]
+    if:
+      properties: { kind: { const: card } }
+    then:
+      required: [ layout ]
+    else:
+      required: [ asset_ref, path, sha256, bytes ]
+    allOf:
+      - if:
+          properties: { kind: { const: video } }
+        then:
+          required: [ duration_ms ]
+        else:
+          not: { required: [ duration_ms ] }
+    examples:
+      - { kind: "terminal", origin: "authored", asset_ref: "A001", path: "media/checkout-model.txt", file: "media/checkout-model.txt", sha256: "0000000000000000000000000000000000000000000000000000000000000000", bytes: 214 }
+      - { kind: "card", origin: "card", layout: "end_card" }
+
+  text:
+    type: object
+    additionalProperties: false
+    description: >
+      One text the shot shows, in the cut's language, in the order it is read. Within a shot the spanned lines come in line order; a text anchored to a line comes immediately after it, several in the shot's list order; the texts with no anchor come after the last line, in list order. Each text is fully opaque for its reading time: the larger of the floor, the words times the time per word, and the characters over the characters per second, each rounded up to a whole millisecond, times the busy-picture factor (rounded up) over an `image` or `video` picture, and raised to the recognise hold when it is the first text to arrive with a new picture. Its window holds its fades around that time: the entrance fade, the reading time, then the exit fade, and the next text's window starts where it ends. A card's texts accumulate: each takes its entrance fade and its reading time before the next arrives, and all of them stay until the card ends.
+    properties:
+      role:
+        type: string
+        enum: [ line, title, subtitle, statement, label, call_to_action, link, credit, source_note, keyword, quote ]
+        description: "`line` for a film line shown on screen; otherwise the on-screen text's role."
+        examples: [ "keyword" ]
+      line_ref:
+        type: string
+        pattern: "^LN[0-9]{3}$"
+        description: "The film line, when `role` is `line`."
+        examples: [ "LN003" ]
+      text_ref:
+        type: string
+        pattern: "^OT[0-9]{3}$"
+        description: "The on-screen text, for every other role."
+        examples: [ "OT003" ]
+      words:
+        type: string
+        description: "The text in the cut's language, from its script."
+      start_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "When the text starts to fade in, from the start of the shot."
+      end_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "When the text has faded out, from the start of the shot; for a card's text, the end of the shot, since it leaves with the card."
+      anchor_line_ref:
+        type: string
+        pattern: "^LN[0-9]{3}$"
+        description: "The line the text belongs to, as the film file declares it."
+      anchor_model_id:
+        type: string
+        description: "The model element the text names, as the film file declares it."
+    required: [ role, words, start_ms, end_ms ]
+    oneOf:
+      - { properties: { role: { const: line } }, required: [ line_ref ] }
+      - { properties: { role: { not: { const: line } } }, required: [ text_ref ] }
+
+  shot:
+    type: object
+    additionalProperties: false
+    description: >
+      One shot of the cut. On the cut's timeline it runs from `start_ms` to `end_ms`: the scene's lead-in when it is the scene's first shot, then `length_ms`, then the scene's tail when it is the scene's last shot. `length_rule` names the rule that set `length_ms`: `reading` (the sum of its texts' windows), `recognise` (a picture with no text), `silent_beat`, `end_card` (a card whose layout is `end_card`: its texts' entrance fades and reading times plus the end-card extra), `minimum` (an authored minimum raised the length), or `clip` (the shot opens a video clip, which plays once from the start of its picture, so the shot lasts at least the clip's `duration_ms`; a longer shot, and a shot after it on the same picture, hold the clip's last frame).
+    properties:
+      shot_ref:
+        type: string
+        pattern: "^SH[0-9]{3}$"
+        description: "The shot in the film file."
+        examples: [ "SH004" ]
+      scene_ref:
+        type: string
+        pattern: "^SC[0-9]{3}$"
+        description: "The shot's scene."
+        examples: [ "SC003" ]
+      order:
+        type: integer
+        minimum: 1
+        description: "The shot's position in the cut, from 1."
+      start_ms: { $ref: "#/$defs/milliseconds" }
+      end_ms: { $ref: "#/$defs/milliseconds" }
+      lead_in_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "The scene lead-in held before the shot's first text; 0 unless the shot opens its scene."
+      length_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "The shot's own length, set by `length_rule`."
+      tail_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "The scene tail held after the shot's last text; 0 unless the shot closes its scene."
+      length_rule:
+        type: string
+        enum: [ reading, recognise, silent_beat, end_card, minimum, clip ]
+        description: "The rule that set `length_ms`."
+        examples: [ "reading" ]
+      transition_in:
+        $ref: "#/$defs/transition"
+      picture:
+        $ref: "#/$defs/picture"
+      busy:
+        type: boolean
+        description: "True when the picture is an `image` or a `video`, over which text takes the busy-picture factor; false over a card or a text picture."
+      silent_beat:
+        type: boolean
+        description: "True for a deliberate moment with no text and no line."
+      title:
+        type: string
+        description: "What the shot shows, from the film file."
+      purpose:
+        type: string
+        description: "Why the shot is there, from the film file."
+      shot_size:
+        type: string
+        enum: [ wide, medium, detail ]
+        description: "How much of the picture the shot frames, from the film file."
+      minimum_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "The authored minimum length, when the film file gives one."
+      texts:
+        type: array
+        description: "The texts the shot shows, in reading order."
+        items: { $ref: "#/$defs/text" }
+      provenance:
+        $ref: "urn:narrative:presentation:1.0.0#/$defs/provenance"
+    required: [ shot_ref, scene_ref, order, start_ms, end_ms, lead_in_ms, length_ms, tail_ms, length_rule, transition_in, picture, busy, silent_beat, texts, provenance ]
+
+properties:
+  audio:
+    type: object
+    additionalProperties: false
+    description: "Resolved audio recipe on the film clock. Omitted for legacy silent films."
+    properties:
+      sample_rate_hz: { type: integer, const: 48000 }
+      envelope_rule: { type: string, const: "per-cue linear fades; named bus silence mutes the sum after cue fades; buses sum without normalization" }
+      cues:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            id: { type: string, pattern: "^AC[0-9]{3}$" }
+            role: { type: string, enum: [ music, sfx ] }
+            purpose: { type: string, minLength: 1 }
+            library_ref: { type: string, minLength: 1 }
+            asset_ref: { type: string, minLength: 1 }
+            stem_ref: { type: string, minLength: 1 }
+            anchor: { $ref: "urn:narrative:film:1.0.0#/$defs/audio_anchor" }
+            start_ms: { $ref: "#/$defs/milliseconds" }
+            end_ms: { $ref: "#/$defs/milliseconds" }
+            offset_ms: { type: integer }
+            source_start_ms: { $ref: "#/$defs/milliseconds" }
+            duration_ms: { type: integer, minimum: 1 }
+            gain_db: { type: number, minimum: -60, maximum: 0 }
+            fade_in_ms: { $ref: "#/$defs/milliseconds" }
+            fade_out_ms: { $ref: "#/$defs/milliseconds" }
+            source:
+              type: object
+              additionalProperties: false
+              properties:
+                library_root: { type: string, description: "Explicit compiler-bound library root, relative to the IR directory." }
+                manifest: { type: string }
+                path: { type: string }
+                sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+                source_duration_ms: { type: integer, minimum: 1 }
+              required: [ library_root, manifest, path, sha256, source_duration_ms ]
+          required: [ id, role, purpose, library_ref, asset_ref, anchor, source_start_ms, duration_ms, gain_db, fade_in_ms, fade_out_ms, source ]
+          oneOf:
+            - required: [ start_ms, end_ms ]
+              not: { required: [ offset_ms ] }
+            - required: [ offset_ms ]
+              not: { anyOf: [ { required: [ start_ms ] }, { required: [ end_ms ] } ] }
+      silence_windows:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            id: { type: string, pattern: "^AW[0-9]{3}$" }
+            anchor: { $ref: "urn:narrative:film:1.0.0#/$defs/audio_anchor" }
+            start_ms: { $ref: "#/$defs/milliseconds" }
+            end_ms: { $ref: "#/$defs/milliseconds" }
+            offset_ms: { type: integer }
+            duration_ms: { type: integer, minimum: 1 }
+            buses:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: { type: string, enum: [ music, sfx ] }
+          required: [ id, anchor, buses ]
+          oneOf:
+            - required: [ start_ms, end_ms ]
+              not: { required: [ offset_ms ] }
+            - required: [ offset_ms, duration_ms ]
+              not: { anyOf: [ { required: [ start_ms ] }, { required: [ end_ms ] } ] }
+    required: [ sample_rate_hz, envelope_rule, cues, silence_windows ]
+  film:
+    type: object
+    additionalProperties: false
+    description: "The cut as a whole: which film, which version, which cut, how long, and where it comes from."
+    properties:
+      title:
+        type: string
+        description: "The narrative's name."
+      narrative_id:
+        type: string
+        pattern: "^N[0-9]{3}$"
+        description: "The narrative's id."
+        examples: [ "N001" ]
+      version:
+        type: integer
+        minimum: 1
+        description: "The film's version, copied from the film file's work record."
+        examples: [ 1 ]
+      variant_ref:
+        type: string
+        pattern: "^DLV[0-9]{3}$"
+        description: "The cut: a delivery variant with a film block."
+        examples: [ "DLV001" ]
+      language:
+        type: string
+        description: "The cut's language, which selected the script."
+        examples: [ "pl-PL" ]
+      voice_source:
+        type: string
+        enum: [ none ]
+        description: "The cut's voice. Only a cut with no voice is generated."
+      max_seconds:
+        type: integer
+        minimum: 1
+        description: "The cut's longest acceptable running time, when the variant gives one."
+      total_ms:
+        $ref: "#/$defs/milliseconds"
+        description: "The running time: shot lengths, scene lead-ins and tails, and transition lengths."
+      timing:
+        type: object
+        additionalProperties: false
+        description: "How the cut was timed."
+        properties:
+          method:
+            type: string
+            enum: [ reading_time ]
+            description: "Reading time from the film's design tokens."
+          tokens:
+            type: object
+            additionalProperties: false
+            description: "The token file the lengths were read from."
+            properties:
+              path: { type: string, description: "Relative to the IR file." }
+              version: { type: string, description: "The token file's own version." }
+            required: [ path, version ]
+        required: [ method, tokens ]
+      provenance:
+        type: object
+        additionalProperties: false
+        description: "Where the IR comes from, and which pictures it shows."
+        properties:
+          source_narrative:
+            type: object
+            additionalProperties: false
+            properties:
+              id: { type: string, pattern: "^N[0-9]{3}$" }
+              path: { type: string, description: "The narrative root, relative to the IR file." }
+            required: [ id, path ]
+          generated_by:
+            type: object
+            additionalProperties: false
+            properties:
+              tool: { type: string, description: "The generator that wrote the IR." }
+              mode: { type: string, enum: [ projection ], description: "Always a deterministic projection." }
+            required: [ tool, mode ]
+          media_digest:
+            type: string
+            pattern: "^[0-9a-f]{64}$"
+            description: >
+              The sha256 of the sorted lines `<path> <sha256>`, one per distinct picture file the cut shows, each line ending in a newline. It changes when any picture's bytes change and not when the model lists its assets in another order.
+          picture_count:
+            type: integer
+            minimum: 0
+            description: "The number of distinct picture files the digest covers."
+        required: [ source_narrative, generated_by, media_digest, picture_count ]
+    required: [ title, narrative_id, version, variant_ref, language, voice_source, total_ms, timing, provenance ]
+
+  scenes:
+    type: array
+    description: "The cut's selected scenes in screen order, each with its span on the timeline and its holds."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        scene_ref: { type: string, pattern: "^SC[0-9]{3}$" }
+        start_ms: { $ref: "#/$defs/milliseconds" }
+        end_ms: { $ref: "#/$defs/milliseconds" }
+        lead_in_ms: { $ref: "#/$defs/milliseconds" }
+        tail_ms: { $ref: "#/$defs/milliseconds" }
+      required: [ scene_ref, start_ms, end_ms, lead_in_ms, tail_ms ]
+
+  shots:
+    type: array
+    minItems: 1
+    description: "Every shot of the cut, in screen order."
+    items: { $ref: "#/$defs/shot" }
+
+required: [ film, scenes, shots ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: presentation
+  design_notes: >
+    The IR is the one contract a film template reads, so it carries every value a template would otherwise look up: the words, the times, the picture files and their hashes. Times are milliseconds so frame rate stays a renderer setting. Each picture's sha256 and the media digest identify what a cut shows even when its pictures are rebuilt outside version control. Each shot names the rule that set its length, so a reviewer can trace a running time back to a design token.
+  non_goals:
+    - "A spoken cut's timing, recordings, captions and spoken-time audio anchors"
+    - "Element motion inside a picture"
+    - "Frame numbers, frame rate and output sizes: renderer settings"
+  status: review

@@ -1,0 +1,12 @@
+version: "1.0.0"
+concepts:
+  - id: C001
+    term: "Authored Narrative Graph"
+    definition: "A manifest-resolved set of intent, knowledge, orchestration, and delivery files with stable entity IDs."
+    used_in_claims: [CLM001]
+    taught_in_scenes: [SC002]
+  - id: C002
+    term: "Presentation IR Provenance"
+    definition: "Explicit scene, claim, concept, asset, and evidence references carried on every projected slide."
+    used_in_claims: [CLM002]
+    taught_in_scenes: [SC003]

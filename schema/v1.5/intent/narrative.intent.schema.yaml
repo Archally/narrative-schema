@@ -1,0 +1,115 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:intent:1.0.0"
+title: "Narrative Intent"
+description: "Describe who the narrative serves, what should change for them, and which delivery constraints apply."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for the audience and goals."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  topic_statement:
+    type: string
+    description: "One-sentence description of what this narrative is about."
+
+  audience:
+    description: "Describe the people the argument is meant to reach."
+    type: object
+    additionalProperties: false
+    properties:
+      level:
+        description: "Choose a starting level that fits the intended audience."
+        type: string
+        enum: [ beginner, intermediate, advanced, mixed ]
+      roles:
+        description: "Name the roles readers or listeners typically occupy."
+        type: array
+        items: { type: string }
+      prior_knowledge:
+        description: "State what the audience can already be expected to understand."
+        type: array
+        items: { type: string }
+      constraints:
+        description: "Record audience conditions that affect how the argument should be delivered."
+        type: array
+        items: { type: string }
+    required: [ level ]
+
+  goals:
+    type: array
+    description: "State the audience outcomes this narrative is designed to achieve."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^G[0-9]{3}$", description: "Stable identifier scenes and claims can cite when advancing the outcome." }
+        statement: { type: string, description: "Describe the change the audience should experience after delivery." }
+        success_signal:
+          type: string
+          description: "Observable indicator that the goal is achieved (quiz, exercise output, Q&A quality)."
+        priority:
+          description: "Indicate how important the outcome is to the delivery."
+          type: string
+          enum: [ must, should, could ]
+        external_goals:
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/external_links"
+          description: >
+            Aims held in other models that this goal serves, such as a learning outcome of a course model. The linked model stays the source of the aim; the statement here says what this narrative does for its audience.
+          examples:
+            - [ { model: course, project: sample, entity_id: LO001 } ]
+      required: [ id, statement ]
+
+  non_goals:
+    description: "Record outcomes or topics the audience should expect outside this delivery."
+    type: array
+    items: { type: string }
+
+  constraints:
+    type: object
+    additionalProperties: false
+    description: "State the limits shared by deliveries of this narrative."
+    properties:
+      duration_minutes: { type: integer, minimum: 1, description: "Record the shared delivery time budget in minutes." }
+      language: { type: string, description: "e.g., pl-PL, en-US" }
+      tone: { type: string, enum: [ serious, pragmatic, playful, inspirational, mixed ], description: "Describe the intended manner of addressing the audience." }
+      format:
+        type: string
+        enum: [ lecture, workshop, keynote, internal_update, film, mixed ]
+        description: "How the narrative is delivered. `film` is a recorded film rather than a live session."
+        examples: [ "film" ]
+      environment:
+        description: "Describe the setting and conditions expected for delivery."
+        type: string
+        enum: [ in_person, online, hybrid ]
+      accessibility:
+        type: array
+        description: "Accessibility commitments (captions, color contrast, etc.)."
+        items: { type: string }
+    required: [ duration_minutes, language, format ]
+
+  north_star:
+    type: object
+    additionalProperties: false
+    description: "The central promise and the one thing you don't compromise."
+    properties:
+      statement: { type: string, description: "State the central transformation that guides the narrative's choices." }
+      avoid:
+        type: array
+        description: "What to avoid that would undermine the narrative."
+        items: { type: string }
+    required: [ statement ]
+
+required: [ version, topic_statement, audience, goals, constraints, north_star ]
+
+x-gdsm:
+  version: "1.2.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: intent
+  design_notes: >
+    The intent states the audience, goals and constraints a delivery must meet. The format `film` marks a narrative delivered as a recorded film; no film-only intent field is needed.
+  non_goals:
+    - "Film-specific production settings, which belong to the film file, the variants and the theme"
+  status: review

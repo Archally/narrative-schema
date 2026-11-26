@@ -1,0 +1,62 @@
+version: "1.0.0"
+narrative_arc: problem_solution
+structure_framework: abt
+scenes:
+  - id: SC001
+    title: "Single-Source Narrative Delivery"
+    idea: "Teams often rewrite the same argument for decks and films, letting slides and scripts drift apart."
+    beat: and
+    abt_role: and
+    role: hook
+    sequence:
+      next: SC002
+    timebox:
+      target: 3
+    covers:
+      concepts: [C001]
+    supports_goals: [G001]
+    script_hooks:
+      key_points:
+        - "Decks and films frequently diverge when maintained in separate files."
+        - "One checked Narrative manifest anchors every downstream artifact."
+  - id: SC002
+    title: "Resolve the Authored Graph Once"
+    idea: "Every tool reads the same declared planes, so validation and projection agree on every entity."
+    beat: but
+    abt_role: but
+    role: teach
+    sequence:
+      prev: SC001
+      next: SC003
+    timebox:
+      target: 6
+    covers:
+      concepts: [C001]
+      claims: [CLM001]
+      evidence: [E001]
+      assets: [A001]
+    supports_goals: [G001]
+    script_hooks:
+      key_points:
+        - "Manifest resolution is shared across CLI, MCP, and builders."
+        - "Local diagram assets stay self-contained for deterministic builds."
+  - id: SC003
+    title: "Verify Slide Provenance Automatically"
+    idea: "Each projected slide carries its scene, claim, concept, and evidence IDs for automated checks."
+    beat: therefore
+    abt_role: therefore
+    role: payoff
+    pays_off: [SC001, SC002]
+    sequence:
+      prev: SC002
+    timebox:
+      target: 6
+    covers:
+      concepts: [C002]
+      claims: [CLM002]
+      evidence: [E002]
+    supports_goals: [G002]
+    script_hooks:
+      key_points:
+        - "Sibling presentation IR preserves full provenance alongside the PDF."
+        - "Curated IR files are protected from accidental overwrites."

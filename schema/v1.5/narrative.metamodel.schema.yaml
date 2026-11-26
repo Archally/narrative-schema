@@ -1,0 +1,170 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:metamodel:1.0.0"
+title: "Narrative Metamodel"
+description: "Define reusable identifiers, references, and timing budgets shared across the narrative suite."
+type: object
+additionalProperties: false
+
+$defs:
+  id_ref:
+    type: string
+    pattern: "^[A-Z]{1,5}[0-9]{3}$"
+
+  entity_base:
+    description: "Shared identity and display metadata for an authored narrative entity."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { $ref: "#/$defs/id_ref", description: "Stable identifier used by links to this entity." }
+      title: { type: string, description: "Human-readable label that identifies the entity in views." }
+      summary: { type: string, description: "Short explanation for readers scanning a list of entities." }
+      tags:
+        description: "Editorial labels that help readers group related entities."
+        type: array
+        items: { type: string }
+    required: [ id, title ]
+
+  refs:
+    description: "Group links by target kind using identifiers from the same narrative."
+    type: object
+    additionalProperties: false
+    properties:
+      goals:
+        description: "Links to audience outcomes owned by the intent plane."
+        type: array
+        items: { type: string, pattern: "^G[0-9]{3}$" }
+      concepts:
+        description: "Links to canonical terms owned by the knowledge plane."
+        type: array
+        items: { type: string, pattern: "^C[0-9]{3}$" }
+      claims:
+        description: "Links to assertions made by the narrative's argument."
+        type: array
+        items: { type: string, pattern: "^CLM[0-9]{3}$" }
+      evidence:
+        description: "Links to sources that support or qualify the argument."
+        type: array
+        items: { type: string, pattern: "^E[0-9]{3}$" }
+      assets:
+        description: "Links to reusable material such as demos or illustrations."
+        type: array
+        items: { type: string, pattern: "^A[0-9]{3}$" }
+      scenes:
+        description: "Links to steps in the shared authored argument."
+        type: array
+        items: { type: string, pattern: "^SC[0-9]{3}$" }
+      questions:
+        description: "Links to anticipated questions and their prepared answers."
+        type: array
+        items: { type: string, pattern: "^AQ[0-9]{3}$" }
+
+  timebox:
+    examples:
+      - min: 0.5
+        target: 1.5
+        max: 2
+    type: object
+    additionalProperties: false
+    description: "Budget in fractional minutes. Record a planned target and add a minimum or maximum when helpful. Keep min at or below target and max at or above target when supplied."
+    properties:
+      min: { type: number, minimum: 0, examples: [ 0.5 ], description: "Shortest useful run time for this material, in minutes." }
+      target: { type: number, minimum: 0, examples: [ 1.5 ], description: "Planned run time in minutes for the authored material." }
+      max: { type: number, minimum: 0, examples: [ 2 ], description: "Longest useful run time for this material, in minutes." }
+    required: [ target ]
+
+  external_link:
+    type: object
+    title: "External Link"
+    description: >
+      A link to an entity held in another model, such as a learning outcome or a concept of a course model, by model family, project and entity id. The linked model stays the source of that entity and its definition; the narrative never copies it. The validator checks the link's form and does not resolve it.
+    additionalProperties: false
+    properties:
+      model:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        title: "Model Family"
+        description: "Family of the model that holds the linked entity, in lowercase."
+        examples: [ "course" ]
+      project:
+        type: string
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        title: "Project"
+        description: "Project identifier of the linked model."
+        examples: [ "sample" ]
+      entity_id:
+        type: string
+        pattern: "^(?:[a-z][a-z0-9-]*\\.)?[A-Z]{1,5}[0-9]{3,}$"
+        title: "Entity Id"
+        description: "Identifier of the linked entity in its own model, optionally qualified by a slice."
+        examples: [ "LO001", "CON004" ]
+      note:
+        type: string
+        minLength: 1
+        title: "Note"
+        description: "How the narrative entity relates to the linked one."
+        examples: [ "The workshop's opening scenes reach this outcome." ]
+    required: [ model, project, entity_id ]
+
+  external_links:
+    type: array
+    title: "External Links"
+    description: "Entities held in other models that a narrative entity serves or stands for; at least one when present."
+    minItems: 1
+    items:
+      $ref: "#/$defs/external_link"
+
+x-gdsm:
+  version: "1.5.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  suite_name: "narrative"
+  suite_description: >
+    A narrative model of one argument delivered on several occasions: as a talk or workshop with a deck, or as a film. It separates what the argument says (intent, knowledge) from how it is ordered (orchestration), worded per language and occasion (delivery), checked (assurance) and drawn (presentation).
+  design_rationale: >
+    One argument, many deliverables. Scenes, claims and concepts are shared by every deliverable, so an edit reaches every deck and film that uses it. Words live only in the per-language scripts; structure that must survive a change of language (scenes, film lines, on-screen texts, shots) carries identifiers and no words. Time is derived where it can be: a deck scene has a budget in minutes, while a film shot takes its length from its lines, its texts or a design token, and an authored number only raises it. Appearance and limits stay out of the content model.
+  status: review
+  planes:
+    - id: intent
+      description: "Audience, goals, constraints and the north star of the narrative."
+      schemas: [ "intent/narrative.intent.schema.yaml" ]
+    - id: knowledge
+      description: "Concepts, claims, evidence and assets, including picture assets, their sources and what each picture shows."
+      schemas: [ "knowledge/narrative.concepts.schema.yaml", "knowledge/narrative.claims.schema.yaml", "knowledge/narrative.evidence.schema.yaml", "knowledge/narrative.assets.schema.yaml" ]
+    - id: orchestration
+      description: "Scene order, arc and timing; opt-in branching story graphs; a film's lines, on-screen texts and shots."
+      schemas: [ "orchestration/narrative.scenes.schema.yaml", "orchestration/narrative.scenes.v1.1.schema.yaml", "orchestration/narrative.film.schema.yaml" ]
+    - id: delivery
+      description: "Per-language scripts and per-occasion variants, including how a variant is cut as a film."
+      schemas: [ "delivery/narrative.script.schema.yaml", "delivery/narrative.variants.schema.yaml" ]
+    - id: assurance
+      description: "Questions and answers, rehearsal checklists and view contracts."
+      schemas: [ "assurance/narrative.qa.schema.yaml", "assurance/narrative.rehearsal.schema.yaml", "assurance/narrative.views.schema.yaml" ]
+    - id: presentation
+      description: "Generated deck and film content and the visual configuration that controls their appearance."
+      schemas: [ "presentation/narrative.presentation.schema.yaml", "presentation/narrative.film-ir.schema.yaml", "presentation/narrative.visual-config.schema.yaml" ]
+  schema_graph:
+    N: { schema: "narrative.talk.schema.yaml", entity: "Narrative", description: "The narrative root." }
+    G: { schema: "intent/narrative.intent.schema.yaml", entity: "Goal", description: "An audience transformation outcome." }
+    C: { schema: "knowledge/narrative.concepts.schema.yaml", entity: "Concept", description: "A term the narrative teaches." }
+    CLM: { schema: "knowledge/narrative.claims.schema.yaml", entity: "Claim", description: "A statement the narrative makes." }
+    E: { schema: "knowledge/narrative.evidence.schema.yaml", entity: "Evidence", description: "A source that backs a claim." }
+    A: { schema: "knowledge/narrative.assets.schema.yaml", entity: "Asset", description: "A delivery building block, including a picture." }
+    SC: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Scene", description: "One step of the argument." }
+    SL: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Suggested slide", description: "A slide hint inside a scene." }
+    TR: { schema: "orchestration/narrative.scenes.v1.1.schema.yaml", entity: "Transition", description: "An authored choice or default move between two scenes in an opt-in branching story graph." }
+    LN: { schema: "orchestration/narrative.film.schema.yaml", entity: "Line", description: "One sentence or one idea of a film, worded per language." }
+    OT: { schema: "orchestration/narrative.film.schema.yaml", entity: "On-screen text", description: "A text a film shows rather than speaks, worded per language." }
+    SH: { schema: "orchestration/narrative.film.schema.yaml", entity: "Shot", description: "One picture or card on a film's picture track." }
+    AC: { schema: "orchestration/narrative.film.schema.yaml", entity: "Audio cue", description: "An authored music or sound effect cue at a film anchor." }
+    AW: { schema: "orchestration/narrative.film.schema.yaml", entity: "Silence window", description: "An authored interval of silence for selected audio buses." }
+    CO: { schema: "delivery/narrative.script.schema.yaml", entity: "Callout", description: "A reusable emphasis in a script." }
+    INT: { schema: "delivery/narrative.script.schema.yaml", entity: "Interaction", description: "An audience interaction moment." }
+    DLV: { schema: "delivery/narrative.variants.schema.yaml", entity: "Variant", description: "One occasion the narrative is delivered on, as a session or a film." }
+    AQ: { schema: "assurance/narrative.qa.schema.yaml", entity: "Anticipated question", description: "A question the audience is likely to ask." }
+    CHK: { schema: "assurance/narrative.rehearsal.schema.yaml", entity: "Rehearsal check", description: "A rehearsal checklist item." }
+    VW: { schema: "assurance/narrative.views.schema.yaml", entity: "View", description: "A view contract." }
+    MU: { schema: null, entity: "Music cue", description: "Reserved prefix; no schema in this release defines it." }
+  non_goals:
+    - "A film with a voice: recordings, their alignment to lines, captions and timing by recording"
+    - "Final audio mixing is outside this schema. Authors can declare music and sound effect cues (AC###) and silence windows (AW###) in the film."
+    - "Frame shapes other than the theme's own"
+    - "Element motion inside a picture, frame rate and every duration, which belong to design tokens and renderer settings"

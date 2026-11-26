@@ -1,0 +1,228 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:presentation:1.0.0"
+title: "Narrative Presentation IR"
+description: >
+  Render-ready slide model (the "IR") projected from a narrative model. This is the
+  human-inspectable checkpoint between the narrative (content) and a rendered deck
+  (appearance). The generated artifact normally lives at <narrative-root>/build/presentation.yaml.
+  Every slide carries provenance back to the source narrative. Appearance, including fonts,
+  colors, and layout geometry, lives in the separate visual-config.
+type: object
+additionalProperties: false
+
+$defs:
+  visual:
+    type: object
+    additionalProperties: false
+    description: >
+      Slide-level hero/background directive. Distinct from an inline body_blocks[image_ref]:
+      this describes the slide's dominant visual, while an image_ref block is placed content.
+    properties:
+      kind:
+        type: string
+        description: "Author-chosen visual archetype (e.g. layered-diagram, split-image, full-bleed-photo). Free-form on purpose; the theme decides how to render it."
+      description:
+        type: string
+        description: "What the visual should convey, for the person who makes it."
+      background_prompt:
+        type: string
+        description: "METADATA ONLY. A prompt describing a background image; the deck pipeline does not generate images from it."
+      uri:
+        type: string
+        description: "Optional author-supplied hero raster/vector by local path or URI. Local assets only are covered by the determinism guarantee."
+      alt:
+        type: string
+        description: "Accessible description of the hero asset when uri is set."
+    required: [kind]
+
+  provenance:
+    type: object
+    additionalProperties: false
+    description: "Traceability from a rendered slide back to the narrative. scene_ref is structural and required."
+    properties:
+      scene_ref:
+        type: string
+        pattern: "^SC[0-9]{3}$"
+        description: "Owning scene. Supplied structurally by the projecting scene, not from a ref list."
+      claim_refs:
+        type: array
+        items: { type: string, pattern: "^CLM[0-9]{3}$" }
+      concept_refs:
+        type: array
+        items: { type: string, pattern: "^C[0-9]{3}$" }
+      asset_refs:
+        type: array
+        items: { type: string, pattern: "^A[0-9]{3}$" }
+      evidence_refs:
+        type: array
+        items: { type: string, pattern: "^E[0-9]{3}$" }
+    required: [scene_ref]
+
+  body_block:
+    description: "A typed unit of slide content. bullets[] is a convenience shorthand the renderer normalizes into text blocks."
+    oneOf:
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: text }
+          text: { type: string }
+        required: [type, text]
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: code }
+          language: { type: string, description: "Highlighting hint (e.g. ts, yaml, text)." }
+          text: { type: string }
+        required: [type, text]
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: quote }
+          text: { type: string }
+          attribution: { type: string }
+        required: [type, text]
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: image_ref }
+          uri: { type: string, description: "Author-supplied by local path or URI; never generated. A local path keeps the render deterministic." }
+          alt: { type: string }
+          caption: { type: string }
+        required: [type, uri]
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: diagram_ref }
+          uri: { type: string, description: "Author-supplied vector/diagram by local path or URI; never generated." }
+          alt: { type: string }
+          caption: { type: string }
+        required: [type, uri]
+      - type: object
+        additionalProperties: false
+        properties:
+          type: { const: table }
+          headers:
+            type: array
+            items: { type: string }
+          rows:
+            type: array
+            items:
+              type: array
+              items: { type: string }
+          caption: { type: string }
+        required: [type, rows]
+
+  slide:
+    type: object
+    additionalProperties: false
+    properties:
+      id:
+        type: string
+        pattern: "^SL[0-9]{3}$"
+        description: "Stable slide identity. Kept stable so refinement can reorder without renumbering."
+      order:
+        type: integer
+        minimum: 1
+        description: "Sequence position. REQUIRED and independent of id so a refinement pass can reorder/split/merge without touching ids."
+      kind:
+        type: string
+        enum: [title, concept, diagram, code, demo, quote, recap, appendix]
+        description: "Reuses the slide kind enum of the scenes schema."
+      layout:
+        type: string
+        description: "Optional override key into visual-config.layouts (otherwise kind selects the layout)."
+      title: { type: string }
+      subtitle: { type: string }
+      key_message:
+        type: string
+        description: "The single idea this slide must land."
+      bullets:
+        type: array
+        description: "Convenience shorthand; may coexist with body_blocks. The renderer normalizes bullets into text blocks."
+        items: { type: string }
+      body_blocks:
+        type: array
+        description: "General typed content form; may coexist with bullets."
+        items: { $ref: "#/$defs/body_block" }
+      visual: { $ref: "#/$defs/visual" }
+      speaker_notes:
+        type: string
+        description: "Presenter notes. Live in the IR; PDF externalizes them to a notes.md sidecar, PPTX to native notes."
+      build_steps:
+        type: array
+        description: "Progressive-reveal step labels. The renderer may expand these into N incremental slides or one composite slide."
+        items: { type: string }
+      provenance: { $ref: "#/$defs/provenance" }
+    required: [id, order, kind, title, provenance]
+
+  demo_plan:
+    type: object
+    additionalProperties: false
+    description: "Carried through from the narrative for demo slides; guidance, not rendered chrome."
+    properties:
+      use_live_demo: { type: boolean }
+      max_seconds: { type: integer, minimum: 0 }
+      narrative:
+        type: array
+        items: { type: string }
+      recommended_proof:
+        type: array
+        items: { type: string }
+      anti_patterns:
+        type: array
+        items: { type: string }
+      fallback:
+        type: array
+        items: { type: string }
+
+properties:
+  deck:
+    type: object
+    additionalProperties: false
+    properties:
+      title: { type: string }
+      subtitle: { type: string }
+      language:
+        type: string
+        pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+        description: "BCP-47-ish tag, e.g. en-US, pl-PL."
+      aspect_ratio:
+        type: string
+        enum: ["16:9", "4:3", "16:10"]
+        default: "16:9"
+      format:
+        type: string
+        enum: [talk, partner-briefing, lightning, workshop]
+        description: >
+          Choose the deck's presentation format independently of the talk-oriented
+          intent.constraints.format enum.
+      source_narrative:
+        type: object
+        additionalProperties: false
+        properties:
+          id: { type: string, pattern: "^N[0-9]{3}$" }
+          path: { type: string, description: "Relative path from the IR to the source narrative root." }
+        required: [id, path]
+      generated_by:
+        type: object
+        additionalProperties: false
+        properties:
+          tool: { type: string, description: "e.g. narrative-presentation@v1." }
+          mode:
+            type: string
+            enum: [projection, ai-refined, hand]
+            description: >
+              How this IR was produced. projection = the deterministic default;
+              ai-refined = an optional AI pass; hand = human-authored. Generation
+              refuses to overwrite a non-projection IR without --force.
+        required: [tool, mode]
+    required: [title, language, format, source_narrative, generated_by]
+
+  slides:
+    type: array
+    minItems: 1
+    items: { $ref: "#/$defs/slide" }
+
+  demo_plan: { $ref: "#/$defs/demo_plan" }
+
+required: [deck, slides]

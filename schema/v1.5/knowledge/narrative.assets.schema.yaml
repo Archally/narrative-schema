@@ -1,0 +1,316 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:assets:1.0.0"
+title: "Narrative Assets"
+description: "Catalog reusable demos, illustrations, and exercises with the context needed to choose them for delivery."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for this library of delivery assets."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  assets:
+    type: array
+    description: >
+      Reusable delivery building blocks (examples, war stories, humor, exercises, questions), including pictures shown in a deck or a film.
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^A[0-9]{3}$", description: "Stable identifier used when a scene or shot uses this asset." }
+        title: { type: string, description: "Short label that helps a speaker recognize the asset." }
+        kind:
+          type: string
+          enum: [ example, war_story, analogy, exercise, question, humor, demo, counterexample ]
+          description: >
+            What the asset is. An `analogy` shown as a picture names, in `illustrates.claims`, the claim it stands for.
+        summary: { type: string, description: "Explain what the audience will see or do." }
+
+        content:
+          type: string
+          description: "Short payload; detailed spoken text belongs in script."
+
+        illustrates:
+          description: "Name the ideas or assertions this material makes tangible."
+          type: object
+          additionalProperties: false
+          properties:
+            concepts:
+              description: "Terms the audience can understand through this material."
+              type: array
+              items: { type: string, pattern: "^C[0-9]{3}$" }
+            claims:
+              description: "Assertions this material helps explain or make concrete."
+              type: array
+              items: { type: string, pattern: "^CLM[0-9]{3}$" }
+          required: []
+
+        suggested_placement:
+          description: "Record where this material is likely to help the argument."
+          type: object
+          additionalProperties: false
+          properties:
+            preferred_scene_roles:
+              description: "Audience functions for which this material is particularly useful."
+              type: array
+              items:
+                type: string
+                enum: [ hook, setup, teach, deepen, proof, turn, payoff, recap, close ]
+            preferred_scene_ids:
+              description: "Specific authored scenes where the material would fit."
+              type: array
+              items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        used_in_scenes:
+          type: array
+          description: "Scenes where this asset is actually used."
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        supports_goals:
+          type: array
+          description: "Goal IDs this asset helps satisfy."
+          items: { type: string, pattern: "^G[0-9]{3}$" }
+
+        safety:
+          examples:
+            - sensitivity: caution
+              risk: low
+              avoid_topics:
+                - Personal performance anecdotes
+          type: object
+          additionalProperties: false
+          description: >
+            Record sensitivity, risk, and topics for a reviewer to consider. Judge suitability for the room using these notes and the variant's audience and confidentiality.
+          properties:
+            sensitivity:
+              description: "Signal how carefully a reviewer should assess the material for the intended audience."
+              type: string
+              enum: [ safe, caution, risky ]
+            risk:
+              description: "Rate the possible downside of presenting this material."
+              type: string
+              enum: [ none, low, medium, high ]
+            avoid_topics:
+              description: "Name topics to avoid when using this material."
+              type: array
+              items: { type: string }
+
+        interaction:
+          type: object
+          additionalProperties: false
+          description: "Describe what the audience does when using this asset."
+          properties:
+            type:
+              description: "Choose the form of participation this asset invites."
+              type: string
+              enum: [ none, poll, hands_up, cold_call, pair_discussion, short_exercise, rhetorical ]
+            prompt: { type: string, description: "Give the question or instruction the audience responds to." }
+            expected_duration_seconds: { type: integer, minimum: 0, description: "Estimate time the audience needs to complete the activity." }
+            fallback: { type: string, description: "Prepare an alternative if the planned activity cannot run." }
+          required: [ type ]
+
+        media:
+          type: object
+          additionalProperties: false
+          description: >
+            Where this asset's picture comes from when it is shown in a film. The picture is resolved when the film is generated and never copied into the narrative, so a re-rendered source reaches every film that shows it.
+          properties:
+            source:
+              description: "Exactly one source of the picture: a file in the narrative, or a model projection's output."
+              oneOf:
+                - type: object
+                  additionalProperties: false
+                  properties:
+                    file:
+                      type: string
+                      pattern: '^media/(?!(.*/)?\.\.(/|$))[^/].*$'
+                      description: >
+                        A picture or video clip file in the narrative's media folder, given relative to the narrative root. Its extension says how a film draws it: `.svg` and `.png` are pictures, `.yaml`, `.yml` and `.json` are text excerpts, `.txt`, `.log`, `.out` and `.diff` are captured command output, and `.mp4` is a video clip such as a screen recording. The file may be absent from a fresh copy of the repository when the project rebuilds it from a recorded recipe; it is then rebuilt before the film is generated.
+                      examples: [ "media/checkout-model.txt" ]
+                  required: [ file ]
+                - type: object
+                  additionalProperties: false
+                  properties:
+                    render:
+                      type: object
+                      additionalProperties: false
+                      description: >
+                        An output of a model projection, addressed by what it is rather than by where a delivery put it: the project, the target its render manifest declares, the slice, the view, the theme and the format. Exactly one current output matches.
+                      properties:
+                        project:
+                          type: string
+                          description: "The project whose render manifest declares the target."
+                          examples: [ "ecommerce" ]
+                        target:
+                          type: string
+                          description: "The target's identifier in that manifest."
+                          examples: [ "arch-map" ]
+                        scope:
+                          type: string
+                          description: "The slice the output describes. Omitted for a whole-model output."
+                          examples: [ "checkout" ]
+                        view:
+                          type: string
+                          description: "The view name, as it appears in the output's file name."
+                          examples: [ "context" ]
+                        theme:
+                          type: string
+                          enum: [ light, dark ]
+                          description: "The theme variant of the output."
+                          examples: [ "light" ]
+                        format:
+                          type: string
+                          enum: [ svg, png ]
+                          description: "The output's image format."
+                          examples: [ "svg" ]
+                      required: [ project, target, view, format ]
+                  required: [ render ]
+              examples:
+                - { file: "media/checkout-model.txt" }
+                - { render: { project: "ecommerce", target: "arch-map", scope: "checkout", view: "context", theme: "light", format: "svg" } }
+            alt:
+              type: string
+              description: "What the picture shows, for a viewer who cannot see it."
+              examples: [ "The checkout context and the three contexts it depends on" ]
+            shows:
+              type: object
+              additionalProperties: false
+              description: >
+                What the picture shows, as data: the things a viewer is meant to see, the state of the system they are in, the tool the picture is taken from and the project it shows. It states meaning only. How the picture was recorded or cut is kept by the film's production records, which a film check compares with this claim: a picture that claims one tool, project or state while its recording says another is refused.
+              properties:
+                state:
+                  type: string
+                  enum: [ as_is, proposed, fixture, reconstruction ]
+                  description: >
+                    The state of what the picture shows. `as_is`: the real, current state of the system or model. `proposed`: a change that is not adopted. `fixture`: a copy or a sample prepared for showing, not the system itself. `reconstruction`: drawn or re-enacted to stand for something that was not captured directly.
+                  examples: [ "as_is" ]
+                surface:
+                  type: string
+                  pattern: "^[a-z0-9][a-z0-9-]*$"
+                  description: >
+                    The tool the picture is taken from, named by a surface id. The set of known surface ids belongs to the film production tooling, which checks this name against it and against the recording.
+                  examples: [ "vscode" ]
+                project:
+                  type: string
+                  minLength: 1
+                  description: >
+                    The model project the picture shows. A subject's model reference without its own project refers to this one.
+                  examples: [ "ecommerce" ]
+                subjects:
+                  type: array
+                  minItems: 1
+                  description: >
+                    The things a viewer is meant to see in the picture, one item each. A subject's id is local to the picture, so a cue can point at it by id.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      id:
+                        type: string
+                        pattern: "^[a-z0-9][a-z0-9-]*$"
+                        description: "The subject's id, unique within the picture."
+                        examples: [ "checkout-context" ]
+                      kind:
+                        type: string
+                        enum: [ entity, relation, screen, control, file_range, result, text ]
+                        description: >
+                          What the subject is. `entity`: one model element. `relation`: a link between two model elements. `screen`: a whole view of a tool. `control`: a button, a field or a menu a viewer sees acted on. `file_range`: lines of a file. `result`: the outcome a command or an action produced. `text`: words shown as they are.
+                        examples: [ "entity" ]
+                      label:
+                        type: string
+                        minLength: 1
+                        description: "What the subject is called on screen."
+                        examples: [ "Checkout" ]
+                      model_ref:
+                        type: object
+                        additionalProperties: false
+                        description: >
+                          A model element by its typed id. Required for an `entity` and a `relation`; a `relation` also names its other end in `to`.
+                        properties:
+                          id:
+                            type: string
+                            pattern: "^\\S+$"
+                            description: "The element's typed id as the model writes it."
+                            examples: [ "checkout.BC001" ]
+                          to:
+                            type: string
+                            pattern: "^\\S+$"
+                            description: "The typed id at the other end of a relation."
+                            examples: [ "catalog.BC002" ]
+                          project:
+                            type: string
+                            minLength: 1
+                            description: "The model project, when it is not the picture's project."
+                            examples: [ "ecommerce" ]
+                        required: [ id ]
+                      file_ref:
+                        type: object
+                        additionalProperties: false
+                        description: "A file and, optionally, a line range in it. Required for a `file_range`."
+                        properties:
+                          path:
+                            type: string
+                            minLength: 1
+                            description: "The file's path, relative to its repository or project root."
+                            examples: [ "checkout/domain.yaml" ]
+                          lines:
+                            type: string
+                            pattern: "^[0-9]+(-[0-9]+)?$"
+                            description: "One line or a range of lines, first and last included."
+                            examples: [ "12-40" ]
+                        required: [ path ]
+                      route:
+                        type: string
+                        minLength: 1
+                        description: "The address or route of the view the subject is in."
+                        examples: [ "#/?view=domains" ]
+                    required: [ id, kind ]
+                    not:
+                      anyOf:
+                        - required: [ model_ref, file_ref ]
+                        - required: [ model_ref, route ]
+                        - required: [ file_ref, route ]
+                    allOf:
+                      - if: { properties: { kind: { enum: [ entity, relation ] } } }
+                        then: { required: [ model_ref ] }
+                      - if: { properties: { kind: { const: relation } } }
+                        then: { properties: { model_ref: { required: [ id, to ] } } }
+                      - if: { properties: { kind: { const: file_range } } }
+                        then: { required: [ file_ref ] }
+                  examples:
+                    - - { id: "checkout-context", kind: "entity", label: "Checkout", model_ref: { id: "checkout.BC001" } }
+                      - { id: "depends-on-catalog", kind: "relation", model_ref: { id: "checkout.BC001", to: "catalog.BC002" } }
+              required: [ state, subjects ]
+              examples:
+                - state: "as_is"
+                  surface: "vscode"
+                  project: "ecommerce"
+                  subjects:
+                    - { id: "place-order", kind: "file_range", file_ref: { path: "checkout/domain.yaml", lines: "12-40" } }
+          required: [ source ]
+          examples:
+            - source: { render: { project: "ecommerce", target: "arch-map", scope: "checkout", view: "context", format: "svg" } }
+              alt: "The checkout context and the three contexts it depends on"
+
+        x-sources:
+          type: array
+          description: "External URLs for further reading or preparation."
+          items: { type: string, format: uri }
+
+      required: [ id, title, kind, illustrates ]
+
+required: [ version, assets ]
+
+x-gdsm:
+  version: "1.2.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: knowledge
+  design_notes: >
+    A picture asset says where its picture comes from: a file in the narrative's media folder or an output of a model projection addressed by what it is. The picture is resolved at generation and never copied in. An analogy shown as a picture names its claim through `illustrates.claims`. What a picture shows is data under `media.shows`: its subjects, each a model element, a relation, a file range, a screen, a control, a result or a text, with the state, tool and project they are shown in. How a picture was recorded or cut is not part of this model.
+  non_goals:
+    - "A review or approval state per picture"
+    - "Clip and recorded-model sources, which arrive with their producers"
+    - "How a picture is recorded or cut: actions, key presses, selectors, trims and crops"
+  status: review

@@ -1,0 +1,93 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:claims:1.0.0"
+title: "Narrative Claims"
+description: "Record the argument's assertions and trace each to its prerequisites, delivery scenes, and supporting material."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for this set of claims."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  claims:
+    type: array
+    description: "Theses you want the audience to believe/remember."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^CLM[0-9]{3}$", description: "Stable identifier used by scenes and evidence that reference the claim." }
+        title: { type: string, description: "State the assertion the audience should be able to repeat." }
+        summary: { type: string, description: "Briefly explain the assertion and why it matters here." }
+
+        strength:
+          examples:
+            - strong
+          type: string
+          enum: [weak, moderate, strong]
+          description: "Rate how assertively the argument makes this claim. A strong claim can have weak or missing evidence. Assess each source separately through evidence.credibility."
+
+        falsifiable:
+          type: boolean
+          description: "If true, claim should be testable or refutable."
+
+        supports_goals:
+          description: "Audience outcomes this assertion helps the speaker achieve."
+          type: array
+          items: { type: string, pattern: "^G[0-9]{3}$" }
+
+        depends_on_claims:
+          type: array
+          description: "Prerequisite claims that must be established earlier."
+          items: { type: string, pattern: "^CLM[0-9]{3}$" }
+
+        key_terms:
+          type: array
+          description: "Concept IDs that should be defined before or during this claim."
+          items: { type: string, pattern: "^C[0-9]{3}$" }
+
+        evidence_refs:
+          type: array
+          description: "Evidence IDs that back this claim."
+          items: { type: string, pattern: "^E[0-9]{3}$" }
+
+        asset_refs:
+          type: array
+          description: "Assets (examples/war-stories/etc.) that illustrate this claim."
+          items: { type: string, pattern: "^A[0-9]{3}$" }
+
+        scene_refs:
+          type: array
+          description: "Scenes where this claim is taught or reinforced."
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        question_refs:
+          type: array
+          description: "Q&A entries that challenge or clarify this claim."
+          items: { type: string, pattern: "^AQ[0-9]{3}$" }
+
+        counterpoints:
+          type: array
+          description: "Record objections or competing interpretations worth addressing explicitly."
+          items: { type: string }
+
+        scope_conditions:
+          type: array
+          description: "When the claim holds (constraints, assumptions)."
+          items: { type: string }
+
+        risk:
+          type: string
+          enum: [none, low, medium, high]
+          description: "Rate the likelihood or consequence of misunderstanding or controversy."
+
+        x-sources:
+          type: array
+          description: "External URLs for further reading or preparation."
+          items: { type: string, format: uri }
+
+      required: [id, title, strength, supports_goals]
+
+required: [version, claims]

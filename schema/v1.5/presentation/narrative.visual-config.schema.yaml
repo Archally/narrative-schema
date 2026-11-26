@@ -1,0 +1,191 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:visual-config:1.0.0"
+title: "Narrative Visual Configuration (Theme)"
+description: >
+  Reusable APPEARANCE for a deck or a film: aspect ratio, type scale, color tokens, a layout template map, render and font settings, and for a film the style of each kind of on-screen text. Contains no content and no limits. The same content with a different visual configuration gives a differently styled deck or film with identical order and content.
+type: object
+additionalProperties: false
+
+$defs:
+  hex_color:
+    type: string
+    pattern: "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+
+  font_spec:
+    type: object
+    additionalProperties: false
+    properties:
+      family: { type: string }
+      size_pt: { type: number, exclusiveMinimum: 0 }
+      weight: { type: integer, minimum: 1, maximum: 1000 }
+    required: [ family, size_pt ]
+
+  film_text_style:
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    description: "How one kind of film text is drawn: its font, and the color token it uses."
+    properties:
+      font:
+        $ref: "#/$defs/font_spec"
+        description: "The font, size and weight of this kind of text."
+        examples: [ { family: "Inter", size_pt: 32, weight: 700 } ]
+      color:
+        type: string
+        pattern: "^[a-z][a-z0-9_]*$"
+        description: "The name of a color token in `theme.colors`, such as `fg` or `accent`."
+        examples: [ "accent" ]
+    examples:
+      - { font: { family: "Inter", size_pt: 32, weight: 700 }, color: "accent" }
+
+  layout:
+    type: object
+    additionalProperties: false
+    description: "A layout template: which regions exist, alignment, and soft content guidance."
+    properties:
+      regions:
+        type: array
+        description: "Named regions the renderer will place (e.g. title, subtitle, bullets, media, code, quote, attribution, caption, logo)."
+        items: { type: string }
+        minItems: 1
+      align:
+        type: string
+        enum: [ left, center, right ]
+      max_bullets:
+        type: integer
+        minimum: 0
+        description: "Soft guidance for how many bullets fit; the renderer may warn past this."
+    required: [ regions ]
+
+properties:
+  theme:
+    type: object
+    additionalProperties: false
+    properties:
+      name: { type: string }
+      aspect_ratio:
+        type: string
+        enum: [ "16:9", "4:3", "16:10" ]
+        default: "16:9"
+      type_scale:
+        type: object
+        additionalProperties: false
+        properties:
+          title: { $ref: "#/$defs/font_spec" }
+          heading: { $ref: "#/$defs/font_spec" }
+          body: { $ref: "#/$defs/font_spec" }
+          caption: { $ref: "#/$defs/font_spec" }
+          code: { $ref: "#/$defs/font_spec" }
+        required: [ title, body ]
+      colors:
+        type: object
+        description: "Color tokens. bg/fg/accent are required; additional tokens (muted, code_bg, quote_accent, …) are allowed."
+        properties:
+          bg: { $ref: "#/$defs/hex_color" }
+          fg: { $ref: "#/$defs/hex_color" }
+          accent: { $ref: "#/$defs/hex_color" }
+          muted: { $ref: "#/$defs/hex_color" }
+          code_bg: { $ref: "#/$defs/hex_color" }
+          quote_accent: { $ref: "#/$defs/hex_color" }
+        additionalProperties: { $ref: "#/$defs/hex_color" }
+        required: [ bg, fg, accent ]
+      spacing:
+        type: object
+        additionalProperties: false
+        properties:
+          slide_padding_pt: { type: number, minimum: 0 }
+          bullet_gap_pt: { type: number, minimum: 0 }
+      film:
+        type: object
+        additionalProperties: false
+        description: >
+          Design choices that apply only when the theme draws a film. It holds no limits: line length, safe areas, contrast floors and every duration belong to the film's design tokens.
+        properties:
+          text_styles:
+            type: object
+            additionalProperties: false
+            minProperties: 1
+            description: >
+              The type and color used for each kind of text in a film: a line shown on screen, and each on-screen text role. A kind left out is drawn in the theme's body style.
+            properties:
+              line: { $ref: "#/$defs/film_text_style" }
+              title: { $ref: "#/$defs/film_text_style" }
+              subtitle: { $ref: "#/$defs/film_text_style" }
+              statement: { $ref: "#/$defs/film_text_style" }
+              label: { $ref: "#/$defs/film_text_style" }
+              call_to_action: { $ref: "#/$defs/film_text_style" }
+              link: { $ref: "#/$defs/film_text_style" }
+              credit: { $ref: "#/$defs/film_text_style" }
+              source_note: { $ref: "#/$defs/film_text_style" }
+              keyword: { $ref: "#/$defs/film_text_style" }
+              quote: { $ref: "#/$defs/film_text_style" }
+            examples:
+              - line: { font: { family: "Inter", size_pt: 44, weight: 600 }, color: "fg" }
+                keyword: { font: { family: "Inter", size_pt: 32, weight: 700 }, color: "accent" }
+        examples:
+          - text_styles:
+              line: { font: { family: "Inter", size_pt: 44, weight: 600 }, color: "fg" }
+      logo:
+        type: object
+        additionalProperties: false
+        properties:
+          uri: { type: string, description: "Author-supplied logo by local path or URI; never generated." }
+        required: [ uri ]
+    required: [ name, type_scale, colors ]
+
+  layouts:
+    type: object
+    description: >
+      Map of slide.kind (and named override keys referenced by slide.layout) -> layout template. Keys are free-form so custom override layouts can be added alongside the kind-named ones.
+    additionalProperties: { $ref: "#/$defs/layout" }
+    minProperties: 1
+
+  render:
+    type: object
+    additionalProperties: false
+    properties:
+      page:
+        type: object
+        additionalProperties: false
+        properties:
+          size:
+            type: string
+            pattern: "^[0-9]+x[0-9]+$"
+            description: "Pixel canvas, e.g. 1280x720. The PDF page is derived from aspect_ratio."
+          margins_pt: { type: number, minimum: 0 }
+        required: [ size ]
+      fonts:
+        type: array
+        description: "PINNED, bundled font files for reproducible text metrics (determinism contract)."
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            family: { type: string }
+            path: { type: string, description: "Relative path to a bundled woff2/ttf." }
+          required: [ family, path ]
+        minItems: 1
+      pdf:
+        type: object
+        additionalProperties: false
+        properties:
+          normalize_metadata:
+            type: boolean
+            default: true
+            description: "Fix CreationDate/producer to reduce diff noise (does not make Chromium bytes identical)."
+          print_background:
+            type: boolean
+            default: true
+    required: [ page, fonts ]
+
+required: [ theme, layouts, render ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: presentation
+  design_notes: >
+    The visual configuration holds design choices only. A film adds the style of each kind of text, keyed by the on-screen roles and `line`; frame shape and pixel canvas use the existing aspect ratio and page size. Limits and durations live with the film's design tokens, not here.
+  non_goals:
+    - "Caption styling, line-length limits, safe areas, contrast floors and durations"
+  status: review

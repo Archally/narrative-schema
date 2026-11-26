@@ -1,0 +1,100 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:talk:1.0.0"
+title: "Narrative Root"
+description: "Bind the authored plane files that together define one narrative."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Version declared for the narrative manifest document."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  name: { type: string, description: "Human-readable name for the complete narrative across deliveries." }
+  id: { type: string, pattern: "^N[0-9]{3}$", description: "Optional narrative identifier for references within the modeling toolkit." }
+
+  planes:
+    description: "Declare the five authored plane envelopes and their file pointers."
+    type: object
+    additionalProperties: false
+    properties:
+      intent:
+        description: "Locate the audience, goals, and constraints for the argument."
+        type: object
+        additionalProperties: false
+        properties:
+          folder: { type: string, description: "Declare the folder associated with the intent plane." }
+          intent: { type: string, description: "Path to the file that owns audience and goals." }
+        required: [ folder, intent ]
+
+      knowledge:
+        description: "Locate the terms, claims, and supporting material the narrative uses."
+        type: object
+        additionalProperties: false
+        properties:
+          folder: { type: string, description: "Declare the folder associated with the knowledge plane." }
+          concepts: { type: string, description: "Path to the file that defines the terms being taught." }
+          claims: { type: string, description: "Path to the file that states the argument's claims." }
+          evidence: { type: string, description: "Optional path to the file that records supporting sources." }
+          assets: { type: string, description: "Optional path to the file that holds reusable delivery material." }
+        required: [ folder, concepts, claims ]
+
+      orchestration:
+        description: "Locate the authored scene flow and optional film structure."
+        type: object
+        additionalProperties: false
+        properties:
+          folder: { type: string, description: "Declare the folder associated with the orchestration plane." }
+          scenes: { type: string, description: "Path to the file that owns the shared scenes." }
+          film:
+            type: string
+            description: "Path to film.yaml, the film made from this narrative (optional)."
+            examples: [ "orchestration/film.yaml" ]
+        required: [ folder, scenes ]
+
+      delivery:
+        description: "Locate language scripts and selections for specific delivery occasions."
+        type: object
+        additionalProperties: false
+        properties:
+          folder: { type: string, description: "Declare the folder associated with the delivery plane." }
+          script: { type: string, description: "Optional path to the primary per-language script file." }
+          slides:
+            type: string
+            description: >
+              Optional pointer to read-only legacy slide input. The reader can inspect the file and report read errors. Baseline validation has no bound schema for its contents. Make current slide corrections in authored sources and rebuild the deck.
+          variants: { type: string, description: "Path to variants.yaml, one entry per occasion this narrative is delivered on (optional)" }
+          scripts:
+            type: array
+            minItems: 1
+            items: { type: string }
+            description: >
+              Paths to further scripts, one per language (optional). Together with `script` they form one set keyed by each script's `voice.language`; a variant's language selects its script.
+            examples: [ [ "delivery/script.pl-PL.yaml" ] ]
+        required: [ folder ]
+
+      assurance:
+        description: "Locate the optional Q&A, rehearsal, and view contract files."
+        type: object
+        additionalProperties: false
+        properties:
+          folder: { type: string, description: "Declare the folder associated with the assurance plane." }
+          qa: { type: string, description: "Optional path to prepared questions and their answers." }
+          rehearsal: { type: string, description: "Optional path to the checklist used for rehearsals." }
+          views: { type: string, description: "Optional path to the modeled Markdown view contracts." }
+        required: [ folder ]
+
+    required: [ intent, knowledge, orchestration, delivery, assurance ]
+
+required: [ version, name, planes ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: null
+  design_notes: >
+    The narrative root composes plane files by path. A film adds one optional pointer to its film file and an optional list of further scripts, one per language, so a cut's language can select its words.
+  non_goals:
+    - "Discovery of plane files by folder listing"
+  status: review

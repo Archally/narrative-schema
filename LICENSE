@@ -1,0 +1,42 @@
+Archally Narrative Schema
+=========================
+
+Copyright 2026 Adam Walkowski
+
+This map assigns a licence to each part of the distribution.
+
+Apache License, Version 2.0 (Apache-2.0)
+----------------------------------------
+
+  schema/                     format definitions
+  examples/                   examples and their documentation
+  docs/                       reader documentation
+  tools/validator/            standalone conformance validator
+  tools/port/                 release and integrity tools
+  tools/LICENSE               tool licence map
+  tools/README.md             tool documentation
+  README.md                   repository introduction
+  CHANGELOG.md                release notes
+  CONTRIBUTING.md             contribution terms
+  LICENSE                     this licence map
+  LICENSE-APACHE              Apache-2.0 licence text
+  NOTICE                      attribution and dependency notices
+  package.json                package metadata
+  package-lock.json           dependency lockfile
+  .gitattributes              line-ending settings
+  .gitignore                  local file exclusions
+  .github/workflows/validate.yml  validation workflow
+
+See LICENSE-APACHE for the full terms. Installed dependencies are governed by
+their own licences. See NOTICE for the dependency inventory.
+
+Functional Source License 1.1 with Apache 2.0 future licence
+------------------------------------------------------------
+
+  LICENSE-FSL                 reference text (FSL-1.1-ALv2)
+
+This release contains no FSL-licensed tools. A tool is subject to the FSL only
+when its path is expressly designated in this map.
+
+Models you author carry their own licence terms. Archally Pro is offered under
+separate terms.

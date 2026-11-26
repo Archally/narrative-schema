@@ -1,0 +1,12 @@
+Archally Narrative Schema Tools
+===============================
+
+Apache License, Version 2.0 (see ../LICENSE-APACHE)
+
+  validator/   standalone conformance validator
+  port/        release and integrity tools
+  README.md    tool documentation
+  LICENSE      this licence map
+
+An FSL tool must be expressly designated in ../LICENSE. This release contains
+no FSL-licensed tools. See ../NOTICE for npm dependency notices.

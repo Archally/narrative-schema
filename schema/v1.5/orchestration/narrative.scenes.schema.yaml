@@ -1,0 +1,154 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:scenes:1.0.0"
+title: "Narrative Scenes"
+description: "Lay out shared steps of the argument, their audience roles, and their links to supporting material."
+type: object
+additionalProperties: false
+
+$defs:
+  structure_framework: { type: string, enum: [ abt, three_act, scqa ] }
+  beat_abt: { type: string, enum: [ and, but, therefore ] }
+  beat_three_act: { type: string, enum: [ setup, confrontation, resolution ] }
+  beat_scqa: { type: string, enum: [ situation, complication, question, answer ] }
+
+properties:
+  version:
+    description: "Document version used for the authored scene list."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  narrative_arc:
+    type: string
+    description: "The shape of the whole argument, such as problem and solution or a journey. It names no beats; `structure_framework` does."
+    enum: [ problem_solution, journey, debate, mystery, framework, case_driven, mixed ]
+
+  structure_framework:
+    $ref: "#/$defs/structure_framework"
+    description: "The structural framework whose beats the scenes name in `beat`. Optional; a scene may name a beat only when it is set."
+
+  scenes:
+    description: "Record the shared steps of the argument in source order."
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^SC[0-9]{3}$", description: "Stable scene identifier reused by scripts, shots, and variants." }
+        title: { type: string, description: "Short scene label for authors and outline readers." }
+
+        idea:
+          type: string
+          description: "The scene's one idea, in one sentence."
+          examples: [ "One model replaces the documents that disagree." ]
+
+        beat:
+          description: "The scene's beat in the root `structure_framework`. Optional: a scene may name none, a beat may repeat, and a structure need not be complete."
+          anyOf:
+            - { $ref: "#/$defs/beat_abt" }
+            - { $ref: "#/$defs/beat_three_act" }
+            - { $ref: "#/$defs/beat_scqa" }
+
+        pays_off:
+          examples:
+            - - SC001
+          type: array
+          uniqueItems: true
+          description: >
+            Name existing setup scenes that precede this payoff in the source scenes array. If SC003 pays off SC001, a variant ordered [SC003, SC001] triggers the payoff-without-earlier-setup advisory even when source order passes validation.
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        abt_role:
+          type: string
+          enum: [ and, but, therefore ]
+          description: >
+            The scene's place in the argument's three clauses: the agreed situation, the problem, or what follows. Left out on a scene outside the argument, such as a closing call to action. It is independent of `beat`, which names a beat of the root `structure_framework`.
+          examples: [ "but" ]
+
+        role:
+          type: string
+          description: "What the scene does for the audience, such as hook, teach or proof. Independent of `beat`: a scene in the `setup` beat need not have the `setup` role."
+          enum: [ hook, setup, teach, deepen, proof, turn, payoff, recap, close ]
+
+        timebox:
+          examples:
+            - min: 0.5
+              target: 1.5
+              max: 2
+          description: "Shared scene budget in fractional minutes. Keep the authored target here and put a room-specific adjustment in the variant override."
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/timebox"
+
+        covers:
+          examples:
+            - claims:
+                - CLM001
+              concepts:
+                - C001
+          description: "Group the goals, concepts, claims, and other material explicitly addressed in the scene by entity kind."
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/refs"
+
+        supports_goals:
+          type: array
+          description: "List audience outcomes this scene advances. Use covers for the grouped inventory of material explicitly addressed."
+          items: { type: string, pattern: "^G[0-9]{3}$" }
+
+        anticipated_questions:
+          type: array
+          description: "Q&A entries likely to emerge from this scene."
+          items: { type: string, pattern: "^AQ[0-9]{3}$" }
+
+        sequence:
+          description: >
+            Optional previous and next links for the intended base running order. Delivery uses explicit variant selection first and falls back to source order when it cannot use sequence links. Payoff validation uses source order.
+          type: object
+          additionalProperties: false
+          properties:
+            prev: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene intended immediately before this one in base delivery." }
+            next: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene intended immediately after this one in base delivery." }
+
+        script_hooks:
+          type: object
+          additionalProperties: false
+          description: "Pointers for script generation; the actual script can be generated."
+          properties:
+            opening_line: { type: string, description: "Suggest how the script should open this scene." }
+            key_points:
+              description: "List the points a script should make during the scene."
+              type: array
+              items: { type: string }
+            call_to_action: { type: string, description: "Suggest what the audience should do after the scene." }
+            speaker_notes: { type: string, description: "Record delivery guidance to consider while wording the script." }
+
+        slide_hooks:
+          type: object
+          additionalProperties: false
+          description: "Optional cues about the material a deck should show."
+          properties:
+            suggested_slides:
+              description: "Describe possible visual beats the deck can draw from."
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  id: { type: string, pattern: "^SL[0-9]{3}$", description: "Stable identifier for the suggestion within the authored narrative." }
+                  kind: { type: string, enum: [ title, concept, diagram, code, demo, quote, recap, appendix ], description: "Choose the visual role the suggested slide should serve." }
+                  title: { type: string, description: "Give the slide suggestion a label that summarizes its point." }
+                  bullets: { type: array, items: { type: string }, description: "List candidate points to emphasize while building the slide." }
+                  refs:
+                    description: "Link the suggestion to relevant material in the narrative."
+                    $ref: "urn:narrative:metamodel:1.0.0#/$defs/refs"
+                required: [ id, kind, title ]
+
+      required: [ id, title, role, timebox, covers ]
+
+required: [ version, narrative_arc, scenes ]
+
+x-gdsm:
+  version: "1.2.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: orchestration
+  design_notes: >
+    Scenes are shared by every deliverable of a narrative. `idea` and `abt_role` let a film review check that each scene carries one idea and that the argument has a problem clause; both are optional, so decks and talks are unaffected.
+  non_goals:
+    - "Shots and lines, which belong to the film file"
+  status: review

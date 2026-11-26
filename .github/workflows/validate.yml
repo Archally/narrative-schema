@@ -1,0 +1,204 @@
+name: Validate Narrative Schema
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate worked example
+        run: npm run validate:example
+
+      - name: Verify negative validator checks on disposable model copies
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { spawnSync } from 'node:child_process';
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+
+          const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'narrative-ci-neg-'));
+          try {
+            const brokenRefDir = path.join(scratch, 'broken-ref');
+            fs.cpSync('examples/public-deck', brokenRefDir, { recursive: true });
+            const claimsPath = path.join(brokenRefDir, 'knowledge/claims.yaml');
+            const claimsText = fs.readFileSync(claimsPath, 'utf8');
+            fs.writeFileSync(claimsPath, claimsText.replace('id: CLM001', 'id: CLM999'), 'utf8');
+            const brokenRef = spawnSync(
+              process.execPath,
+              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.5', '--model', brokenRefDir],
+              { encoding: 'utf8' },
+            );
+            assert.equal(brokenRef.status, 1, `expected exit 1 on broken ref, got ${brokenRef.status}`);
+
+            const badSchemaDir = path.join(scratch, 'bad-schema');
+            fs.cpSync('examples/public-deck', badSchemaDir, { recursive: true });
+            const manifestPath = path.join(badSchemaDir, 'narrative.yaml');
+            const manifestText = fs.readFileSync(manifestPath, 'utf8');
+            fs.writeFileSync(manifestPath, `${manifestText}\nunexpected_field: true\n`, 'utf8');
+            const badSchema = spawnSync(
+              process.execPath,
+              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.5', '--model', badSchemaDir],
+              { encoding: 'utf8' },
+            );
+            assert.equal(badSchema.status, 1, `expected exit 1 on schema error, got ${badSchema.status}`);
+
+            console.log('OK: negative validator controls rejected broken reference and schema violation (exit 1).');
+          } finally {
+            fs.rmSync(scratch, { recursive: true, force: true });
+          }
+          EOF
+
+      - name: Run standalone validator conformance tests
+        run: node --test tools/validator/validator.test.mjs
+
+      - name: Run release-identity checks
+        run: npm run release:check
+
+      - name: Run port and integrity tool tests
+        run: npm test
+
+      - name: Verify shipped snapshot integrity and protected absences
+        run: npm run port:verify
+
+      - name: Exercise integrity tamper controls on a disposable snapshot copy
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { spawnSync } from 'node:child_process';
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+
+          const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'narrative-ci-tamper-'));
+          const copyRoot = path.join(scratch, 'snapshot');
+          try {
+            fs.cpSync('.', copyRoot, {
+              recursive: true,
+              filter: (src) => {
+                const rel = path.relative('.', src).replaceAll('\\', '/');
+                if (rel === '.git' || rel.startsWith('.git/')) {
+                  return false;
+                }
+                if (rel === 'node_modules' || rel.startsWith('node_modules/')) {
+                  return false;
+                }
+                return true;
+              },
+            });
+
+            const verify = () => spawnSync(
+              process.execPath,
+              ['tools/port/verify-ported.mjs', '--root', copyRoot, '--json'],
+              { encoding: 'utf8' },
+            );
+
+            const baseline = verify();
+            assert.equal(baseline.status, 0, baseline.stdout + baseline.stderr);
+
+            const targetFile = path.join(copyRoot, 'schema/v1.5/narrative.talk.schema.yaml');
+            const original = fs.readFileSync(targetFile, 'utf8');
+            fs.writeFileSync(targetFile, `${original}\n# tamper control\n`, 'utf8');
+            const modified = verify();
+            assert.equal(modified.status, 1, 'modified ported file must fail verification');
+            const modifiedReport = JSON.parse(modified.stdout);
+            assert.ok(
+              modifiedReport.problems.some((problem) => problem.includes('modified schema/narrative.talk.schema.yaml')),
+              `unexpected problems: ${modified.stdout}`,
+            );
+            fs.writeFileSync(targetFile, original, 'utf8');
+
+            const undeclared = path.join(copyRoot, 'examples/undeclared-control.md');
+            fs.writeFileSync(undeclared, 'undeclared child\n', 'utf8');
+            const extra = verify();
+            assert.equal(extra.status, 1, 'undeclared covered-root child must fail verification');
+            const extraReport = JSON.parse(extra.stdout);
+            assert.ok(
+              extraReport.problems.includes('Undeclared path: examples/undeclared-control.md'),
+              `unexpected problems: ${extra.stdout}`,
+            );
+            fs.rmSync(undeclared);
+
+            const restored = verify();
+            assert.equal(restored.status, 0, restored.stdout + restored.stderr);
+            console.log('OK: tamper controls failed as expected on modified file and undeclared covered-root child.');
+          } finally {
+            fs.rmSync(scratch, { recursive: true, force: true });
+          }
+          EOF
+
+  # Contribution terms apply by path (see CONTRIBUTING.md and LICENSE):
+  # DCO 1.1 sign-off applies to all commits. Any additional FSL consent applies
+  # exclusively to paths expressly designated as FSL tools in LICENSE (none in 1.5.0).
+  contribution-signoff:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify DCO 1.1 sign-off on pull request commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { spawnSync } from 'node:child_process';
+
+          const baseSha = process.env.BASE_SHA ?? '';
+          const headSha = process.env.HEAD_SHA ?? '';
+          if (!baseSha || !headSha) {
+            console.error('Missing BASE_SHA or HEAD_SHA for DCO verification.');
+            process.exit(2);
+          }
+
+          const revList = spawnSync('git', ['rev-list', '--no-merges', `${baseSha}..${headSha}`], {
+            encoding: 'utf8',
+          });
+          if (revList.status !== 0) {
+            console.error(revList.stderr || 'git rev-list failed');
+            process.exit(2);
+          }
+
+          const commits = revList.stdout.split(/\r?\n/).filter(Boolean);
+          const signoffPattern = /^Signed-off-by:\s+.+\s+<[^<>\s]+@[^<>\s]+>$/m;
+          const missing = [];
+
+          for (const sha of commits) {
+            const body = spawnSync('git', ['log', '-1', '--format=%B', sha], { encoding: 'utf8' });
+            if (body.status !== 0) {
+              console.error(body.stderr || `git log failed for ${sha}`);
+              process.exit(2);
+            }
+            if (!signoffPattern.test(body.stdout)) {
+              missing.push(sha);
+            }
+          }
+
+          if (missing.length > 0) {
+            console.error(`Missing DCO 1.1 Signed-off-by line in commit(s): ${missing.join(', ')}`);
+            process.exit(1);
+          }
+
+          console.log(`OK: verified DCO 1.1 sign-off on ${commits.length} pull request commit(s).`);
+          EOF

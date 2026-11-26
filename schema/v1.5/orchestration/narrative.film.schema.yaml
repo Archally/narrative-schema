@@ -1,0 +1,366 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:film:1.0.0"
+title: "Narrative Film"
+description: >
+  A film made from this narrative: the film as a work (its version and the brief it is checked against), its lines in order, the texts it shows on screen, and its picture track of shots. The words come from one script per language. The time of each shot comes from its lines, its texts, or a hold set by the film's design tokens, so one film file fits every language and every cut. A film is written in the order a designer works: the work record first, then the lines, then the shots.
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    description: >
+      Version of this document's format. The film's own version, which every render carries, is `work.version`.
+    examples: [ "1.0.0" ]
+
+  work:
+    type: object
+    additionalProperties: false
+    description: >
+      The film as a work: its version and the brief a reviewer checks the film against. Every cut of the film, in every language, renders this one version.
+    properties:
+      version:
+        type: integer
+        minimum: 1
+        description: >
+          The film's version (1, 2, ...), carried in the file metadata of every render. It changes when the film is revised. The document format's version is the root `version`.
+        examples: [ 1, 2 ]
+      abt:
+        type: object
+        additionalProperties: false
+        description: >
+          The film's argument in three clauses: what is true and agreed, the problem that interrupts it, and what follows.
+        properties:
+          and:
+            type: string
+            description: "The first clause: the situation the viewer already accepts."
+            examples: [ "A team describes one system in tickets, wiki pages and diagrams" ]
+          but:
+            type: string
+            description: "The second clause: the problem that breaks the situation."
+            examples: [ "but no two of them agree, and nobody can check which one is right" ]
+          therefore:
+            type: string
+            description: "The third clause: what the film proposes as a result."
+            examples: [ "therefore the team keeps one model and renders every picture from it" ]
+        required: [ and, but, therefore ]
+        examples:
+          - and: "A team describes one system in tickets, wiki pages and diagrams"
+            but: "but no two of them agree"
+            therefore: "therefore the team keeps one model and renders every picture from it"
+      before:
+        type: string
+        description: "What the viewer believes or can do before watching the film."
+        examples: [ "Thinks architecture documentation is drawn by hand and goes stale" ]
+      after:
+        type: string
+        description: "What the viewer believes or can do after watching the film."
+        examples: [ "Knows that the pictures can be rendered from one checked model" ]
+      running_example:
+        type: object
+        additionalProperties: false
+        description: >
+          The one model the film follows from start to end. `project` and `scope` use the same vocabulary as a picture's render source, so each picture can be compared with it.
+        properties:
+          project:
+            type: string
+            description: "The project whose model the film follows, as a render source names it."
+            examples: [ "ecommerce" ]
+          scope:
+            type: string
+            description: "The slice of that model the film follows. Omitted when the film follows the whole model."
+            examples: [ "checkout" ]
+          description:
+            type: string
+            description: "The running example in one sentence, for a reader of the film file."
+            examples: [ "A small online shop whose checkout is modeled, checked and drawn" ]
+        required: [ project ]
+        examples:
+          - project: "ecommerce"
+            scope: "checkout"
+            description: "A small online shop whose checkout is modeled, checked and drawn"
+    required: [ version ]
+    examples:
+      - version: 1
+        before: "Thinks architecture documentation is drawn by hand and goes stale"
+        after: "Knows that the pictures can be rendered from one checked model"
+
+  lines:
+    type: array
+    minItems: 1
+    description: >
+      Every line of the film, in order. A line is one sentence or one idea: spoken in a cut with a voice, shown on screen in a cut without one. It carries no words; each language's script words it. Lines of one scene are contiguous. Omitted while the film has no lines yet.
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: "^LN[0-9]{3}$"
+          description: "Line identifier, shared by every language's script."
+          examples: [ "LN004" ]
+        scene_ref:
+          type: string
+          pattern: "^SC[0-9]{3}$"
+          description: "Reference the authored scene that owns this line. Keep that association across language scripts."
+          examples: [ "SC002" ]
+      required: [ id, scene_ref ]
+    examples:
+      - [ { id: "LN001", scene_ref: "SC001" }, { id: "LN002", scene_ref: "SC001" } ]
+
+  on_screen_texts:
+    type: array
+    minItems: 1
+    description: >
+      Every text shown in the picture rather than spoken, declared without words so that shots can show it and each language's script can word it. Omitted while the film shows no text yet.
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: "^OT[0-9]{3}$"
+          description: "On-screen text identifier, shared by every language's script."
+          examples: [ "OT001" ]
+        role:
+          type: string
+          enum: [ title, subtitle, statement, label, call_to_action, link, credit, source_note, keyword, quote ]
+          description: >
+            What the text does on screen, which selects its style in the film theme. A `keyword` names one element of the picture; a `quote` repeats words of the model shown, in the model's own language; `call_to_action` marks the film's call to action.
+          examples: [ "keyword" ]
+        anchor_line_ref:
+          type: string
+          pattern: "^LN[0-9]{3}$"
+          description: >
+            The line this text belongs to. In a cut without a voice the text is shown immediately after that line; in a cut with a voice it is shown while that line is spoken. The line must lie in the span of the shot that shows the text.
+          examples: [ "LN003" ]
+        anchor_model_id:
+          type: string
+          description: >
+            The model element the text names, as the model identifies it, so the text can be placed at that element in the picture. A plain string: nothing in this narrative resolves it.
+          examples: [ "checkout.AGG001" ]
+      required: [ id, role ]
+    examples:
+      - [ { id: "OT001", role: "title" }, { id: "OT003", role: "keyword", anchor_line_ref: "LN003", anchor_model_id: "checkout.AGG001" } ]
+
+  shots:
+    type: array
+    minItems: 1
+    description: >
+      The picture track, in screen order. A shot shows one picture or one card. Its length comes from the lines it spans and the texts it shows; a shot with neither holds for the time a viewer needs to recognise the picture, and a silent beat holds for the silent-beat length. Omitted while the film is being written and has no shots yet.
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: "^SH[0-9]{3}$"
+          description: "Shot identifier."
+          examples: [ "SH004" ]
+        scene_ref:
+          type: string
+          pattern: "^SC[0-9]{3}$"
+          description: "Reference the authored scene this shot belongs to. Every line in its span belongs to that scene."
+          examples: [ "SC002" ]
+        visual:
+          description: >
+            The picture on screen: one asset, or one card composed from on-screen texts. `text_refs` lists the texts shown in this shot in reading order. Within a shot the spanned lines come in line order; a text with an `anchor_line_ref` comes immediately after that line, several such texts in list order; the texts without one come after the last line, in list order.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              properties:
+                asset_ref:
+                  type: string
+                  pattern: "^A[0-9]{3}$"
+                  description: >
+                    An asset whose media says where the picture comes from. Changing that media changes the picture without changing the film file.
+                  examples: [ "A002" ]
+                text_refs:
+                  type: array
+                  minItems: 1
+                  items: { type: string, pattern: "^OT[0-9]{3}$" }
+                  description: "The on-screen texts shown over the picture, in reading order."
+                  examples: [ [ "OT003", "OT004" ] ]
+              required: [ asset_ref ]
+            - type: object
+              additionalProperties: false
+              properties:
+                card:
+                  type: object
+                  additionalProperties: false
+                  description: "A picture composed from text, laid out by the film theme."
+                  properties:
+                    layout:
+                      type: string
+                      description: "A layout key in the visual configuration."
+                      examples: [ "title_card", "end_card" ]
+                    text_refs:
+                      type: array
+                      minItems: 1
+                      items: { type: string, pattern: "^OT[0-9]{3}$" }
+                      description: "The on-screen texts the card shows, in reading order."
+                      examples: [ [ "OT001", "OT002" ] ]
+                  required: [ layout, text_refs ]
+                  examples:
+                    - { layout: "end_card", text_refs: [ "OT004", "OT005" ] }
+              required: [ card ]
+          examples:
+            - { asset_ref: "A002", text_refs: [ "OT003" ] }
+            - { card: { layout: "title_card", text_refs: [ "OT001", "OT002" ] } }
+        title:
+          type: string
+          description: "What the shot shows, for a person reading the film file."
+          examples: [ "The checkout context map" ]
+        purpose:
+          type: string
+          description: "Why the shot is there, in one sentence."
+          examples: [ "Shows that the picture is drawn from the model the line names" ]
+        shot_size:
+          type: string
+          enum: [ wide, medium, detail ]
+          description: >
+            How much of the picture the shot frames: the whole picture, a part of it, or one element.
+          examples: [ "wide" ]
+        spans:
+          type: object
+          additionalProperties: false
+          description: "The lines spoken or shown while this shot is on screen, inclusive, all in its scene."
+          properties:
+            from_line_ref:
+              type: string
+              pattern: "^LN[0-9]{3}$"
+              description: "First line of the span."
+              examples: [ "LN003" ]
+            to_line_ref:
+              type: string
+              pattern: "^LN[0-9]{3}$"
+              description: "Last line of the span. Omitted when the shot spans one line."
+              examples: [ "LN004" ]
+          required: [ from_line_ref ]
+          examples:
+            - { from_line_ref: "LN003", to_line_ref: "LN004" }
+        silent_beat:
+          type: boolean
+          description: >
+            A deliberate moment with no text and no line, which holds for the silent-beat length set by the film's design tokens. A silent beat shows one asset, spans no line and shows no text.
+          examples: [ true ]
+        duration_seconds:
+          type: number
+          exclusiveMinimum: 0
+          description: >
+            A minimum length for the shot, in seconds. The shot's own length comes from its lines, its texts or its hold; this value only raises it.
+          examples: [ 4 ]
+        transition_in:
+          type: string
+          enum: [ cut, crossfade, fade_from_black, dip_to_black ]
+          description: >
+            How this shot replaces the previous one. A cut when omitted. Its length is set by the film's design tokens.
+          examples: [ "crossfade" ]
+      required: [ id, scene_ref, visual ]
+      if:
+        properties: { silent_beat: { const: true } }
+        required: [ silent_beat ]
+      then:
+        not: { required: [ spans ] }
+        properties:
+          visual:
+            required: [ asset_ref ]
+            not: { required: [ text_refs ] }
+    examples:
+      - - { id: "SH001", scene_ref: "SC001", visual: { card: { layout: "title_card", text_refs: [ "OT001" ] } } }
+        - { id: "SH002", scene_ref: "SC001", visual: { asset_ref: "A002" }, spans: { from_line_ref: "LN001" } }
+
+  audio:
+    type: object
+    additionalProperties: false
+    description: "Optional audio direction. Cues use picture anchors and explicit library manifests; silent films omit this block."
+    properties:
+      cues:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            id: { type: string, pattern: "^AC[0-9]{3}$" }
+            library_ref: { type: string, minLength: 1 }
+            asset_ref: { type: string, minLength: 1 }
+            stem_ref: { type: string, minLength: 1 }
+            source_start_ms: { type: integer, minimum: 0 }
+            duration_ms: { type: integer, minimum: 1 }
+            anchor: { $ref: "#/$defs/audio_anchor" }
+            offset_ms: { type: integer }
+            role: { type: string, enum: [ music, sfx ] }
+            purpose: { type: string, minLength: 1 }
+            gain_db: { type: number, minimum: -60, maximum: 0 }
+            fade_in_ms: { type: integer, minimum: 0 }
+            fade_out_ms: { type: integer, minimum: 0 }
+            variant_refs:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: { type: string, pattern: "^DLV[0-9]{3}$" }
+          required: [ id, library_ref, asset_ref, source_start_ms, duration_ms, anchor, role, purpose, gain_db ]
+      silence_windows:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            id: { type: string, pattern: "^AW[0-9]{3}$" }
+            anchor: { $ref: "#/$defs/audio_anchor" }
+            offset_ms: { type: integer }
+            duration_ms: { type: integer, minimum: 1 }
+            buses:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: { type: string, enum: [ music, sfx ] }
+            variant_refs:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: { type: string, pattern: "^DLV[0-9]{3}$" }
+          required: [ id, anchor, duration_ms, buses ]
+
+$defs:
+  audio_anchor:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        properties: { shot_ref: { type: string, pattern: "^SH[0-9]{3}$" } }
+        required: [ shot_ref ]
+      - type: object
+        additionalProperties: false
+        properties: { line_ref: { type: string, pattern: "^LN[0-9]{3}$" } }
+        required: [ line_ref ]
+      - type: object
+        additionalProperties: false
+        properties:
+          visual_event:
+            type: object
+            additionalProperties: false
+            properties:
+              shot_ref: { type: string, pattern: "^SH[0-9]{3}$" }
+              kind: { type: string, enum: [ reveal, highlight, camera, video_callout ] }
+              occurrence: { type: integer, minimum: 1 }
+            required: [ shot_ref, kind, occurrence ]
+        required: [ visual_event ]
+
+required: [ version, work ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: orchestration
+  schema_ref_prefix: "LN, OT, SH"
+  design_notes: >
+    Lines and on-screen texts are the language-neutral join between the picture track and every language's words, so they carry identity here and words in the scripts. A shot carries no required time: its length is derived from its lines, its texts, or a design token, and an authored duration is only a minimum. The film's version is a scalar of the work record because every cut and language renders one version; git holds the earlier ones. A single ordered list of texts per shot, with an optional anchor line per text, orders every text in both kinds of cut.
+  non_goals:
+    - "A voiced film's recordings, their alignment to lines, and captions"
+    - "Spoken-time cue anchors and recorded voice alignment"
+    - "Frame shapes other than the theme's own, and per-shape framing hints"
+    - "Frame rate, transition lengths, holds and every other duration: design tokens and renderer settings"
+    - "Element motion inside a picture"
+    - "A review or approval state per picture"
+  status: review

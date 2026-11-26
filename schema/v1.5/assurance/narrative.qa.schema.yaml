@@ -1,0 +1,98 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:qa:1.0.0"
+title: "Narrative Q&A Pack"
+description: "Prepare answers to likely audience questions and trace each response to scenes, goals, and sources."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for this question pack."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  qa:
+    examples:
+      - - id: AQ001
+          question: Does a rollback recover writes made after the release?
+          short_answer: A rollback restores the previous application version. Recovering writes depends on the data
+            changes and the recovery procedure.
+          category: edge_case
+          risk: high
+          relevant_scenes:
+            - SC003
+          supports_goals:
+            - G001
+          refs:
+            claims:
+              - CLM001
+            evidence:
+              - E001
+    type: array
+    description: "Questions and objections to prepare for before delivery."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^AQ[0-9]{3}$", description: "Stable identifier for references to this prepared question." }
+        question: { type: string, description: "Phrase the question as an audience member would ask it." }
+        short_answer:
+          type: string
+          description: "Answer directly in one to three sentences for live delivery."
+        long_answer:
+          type: string
+          description: "Add reasoning or qualifications to use if the audience asks for detail."
+
+        category:
+          description: "Classify the question by what the answer needs to resolve."
+          type: string
+          enum: [clarification, objection, technical_detail, edge_case, practical, philosophical, security, cost, timing]
+        risk:
+          type: string
+          enum: [none, low, medium, high]
+          description: >
+            Rate the consequence of mishandling the question. Use none for routine clarification,
+            low for a local misunderstanding, medium for an objection that could undermine a
+            claim, and high for a consequential error requiring escalation or review.
+          examples: [high, medium]
+
+        relevant_scenes:
+          description: "Scenes likely to prompt the audience to ask this question."
+          type: array
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        supports_goals:
+          type: array
+          description: "Audience outcomes this answer can help reinforce."
+          items: { type: string, pattern: "^G[0-9]{3}$" }
+
+        refs:
+          description: "Material a speaker can consult to prepare or substantiate the answer."
+          examples:
+            - claims:
+                - CLM001
+              evidence:
+                - E001
+          type: object
+          additionalProperties: false
+          properties:
+            concepts:
+              description: "Concepts the audience must understand to follow the answer."
+              type: array
+              items: { type: string, pattern: "^C[0-9]{3}$" }
+            claims:
+              description: "Claims the question challenges or the answer reinforces."
+              type: array
+              items: { type: string, pattern: "^CLM[0-9]{3}$" }
+            evidence:
+              description: "Sources to cite when substantiating the answer."
+              type: array
+              items: { type: string, pattern: "^E[0-9]{3}$" }
+            assets:
+              description: "Examples or exercises to use when explaining the answer."
+              type: array
+              items: { type: string, pattern: "^A[0-9]{3}$" }
+
+      required: [id, question, short_answer, category]
+
+required: [version, qa]

@@ -1,0 +1,73 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:evidence:1.0.0"
+title: "Narrative Evidence"
+description: "Identify the sources that support the argument so a reader can locate and assess them."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for these supporting source records."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  evidence:
+    type: array
+    description: "Sources, data points, citations, demos that back claims."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^E[0-9]{3}$", description: "Stable identifier used by claims and scenes that cite this source." }
+        title: { type: string, description: "Short source label for reviewers scanning the evidence." }
+
+        kind:
+          description: "Classify the source so reviewers know what to inspect."
+          type: string
+          enum: [paper, book, blog, dataset, benchmark, internal, quote, demo, standard, law]
+        citation:
+          examples:
+            - Synthetic workshop team, Rollback drill notes (2026), section 2.
+          type: string
+          description: "Give enough attribution for a speaker or reviewer to locate the original, such as author, title, date, and page or section."
+
+        url: { type: string, description: "Direct link where a reader can inspect the cited source." }
+        author: { type: string, description: "Person or organization credited with producing the source." }
+        year: { type: integer, description: "Year the cited edition or result was published." }
+
+        excerpt:
+          type: string
+          description: "Quote only the passage needed to support the argument."
+
+        backs_claims:
+          description: "Claims for which this source provides support or corroboration."
+          type: array
+          items: { type: string, pattern: "^CLM[0-9]{3}$" }
+
+        supports_concepts:
+          type: array
+          description: "Concepts this evidence clarifies or substantiates."
+          items: { type: string, pattern: "^C[0-9]{3}$" }
+
+        used_in_scenes:
+          type: array
+          description: "Scenes where this evidence is presented."
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        credibility:
+          examples:
+            - low
+          description: "Rate source reliability for the point it supports by considering method, provenance, and corroboration. A single informal observation can have low credibility even when it backs a strong claim."
+          type: string
+          enum: [low, medium, high]
+        notes:
+          type: string
+          description: "Caveats, limitations, what not to overclaim."
+
+        license:
+          type: string
+          description: "Record reuse terms or attribution needed when presenting this source."
+
+      required: [id, title, kind, citation]
+
+required: [version, evidence]

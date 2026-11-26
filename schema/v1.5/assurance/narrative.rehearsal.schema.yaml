@@ -1,0 +1,76 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:rehearsal:1.0.0"
+title: "Narrative Rehearsal & Quality Checks"
+description: "Record observable checks that a rehearsal or peer review can use to assess a delivery."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for this rehearsal checklist."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  checks:
+    examples:
+      - - id: CHK001
+          name: Time the rollback demo
+          kind: timing
+          severity: warn
+          scope:
+            scene_ids:
+              - SC003
+          pass_criteria: The walkthrough finishes in 90 seconds or less.
+          method: Time from the first rollback screen to the recap.
+    type: array
+    description: "Checks a reviewer or speaker can perform before delivery."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^CHK[0-9]{3}$", description: "Stable identifier used when reporting a rehearsal finding." }
+        name: { type: string, description: "Short label a reviewer can scan during rehearsal." }
+        kind:
+          description: "Choose the main quality this rehearsal check evaluates."
+          type: string
+          enum: [timing, clarity, correctness, pacing, engagement, accessibility, risk, structure]
+        severity:
+          description: "Choose how prominently to report failure based on its consequence for delivery."
+          type: string
+          enum: [info, warn, error]
+
+        pass_criteria:
+          examples:
+            - The walkthrough finishes in 90 seconds or less.
+          type: string
+          description: "State the observable result that counts as passing this check."
+
+        scope:
+          description: "Limit the check to the scenes or claims it evaluates."
+          examples:
+            - scene_ids:
+                - SC003
+          type: object
+          additionalProperties: false
+          properties:
+            scene_ids:
+              description: "Scenes the reviewer should rehearse or inspect for this check."
+              type: array
+              items: { type: string, pattern: "^SC[0-9]{3}$" }
+            claim_ids:
+              description: "Claims the reviewer should verify while performing this check."
+              type: array
+              items: { type: string, pattern: "^CLM[0-9]{3}$" }
+          required: []
+
+        method:
+          examples:
+            - Time from the first rollback screen to the recap.
+          type: string
+          description: "Tell the reviewer how to gather evidence for the pass criteria."
+
+        notes: { type: string, description: "Record practical caveats such as equipment needed or timing exclusions." }
+
+      required: [id, name, kind, severity, pass_criteria]
+
+required: [version, checks]

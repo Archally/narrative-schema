@@ -1,0 +1,10 @@
+version: "1.0.0"
+variants:
+  - id: DLV001
+    name: "Public Conference Deck"
+    language: en-US
+    confidentiality: public
+    scene_selection:
+      scene_ids: [SC001, SC002, SC003]
+    status: planned
+    notes: "Self-contained public deck fixture with local assets only."

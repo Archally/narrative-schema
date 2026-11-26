@@ -1,0 +1,390 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:scenes:1.1.0"
+title: "Narrative Scenes with Branching"
+description: "Lay out shared steps of the argument with an opt-in finite branching story graph for playable routes."
+type: object
+additionalProperties: false
+
+$defs:
+  structure_framework: { type: string, enum: [ abt, three_act, scqa ] }
+  beat_abt: { type: string, enum: [ and, but, therefore ] }
+  beat_three_act: { type: string, enum: [ setup, confrontation, resolution ] }
+  beat_scqa: { type: string, enum: [ situation, complication, question, answer ] }
+
+  graph_scene_id:
+    type: string
+    pattern: "^SC[0-9]{3}$"
+    description: "Stable scene identifier referencing a declared scene in the root scenes array."
+    examples: [ "SC001" ]
+
+  graph_code:
+    type: string
+    pattern: "^[a-z][a-z0-9_]*$"
+    description: "Graph-local lowercase snake_case identifier used for ending codes and state variable keys."
+    examples: [ "verified_logs" ]
+
+  graph_text:
+    type: string
+    minLength: 1
+    pattern: '\S'
+    description: "Non-empty human-readable text containing at least one non-whitespace character."
+    examples: [ "Inspect the server logs first" ]
+
+  graph_value:
+    type: [ boolean, string ]
+    description: "Scalar state value restricted to a boolean or finite enum string value."
+    examples: [ true, "cautious" ]
+
+  scene_graph:
+    type: object
+    additionalProperties: false
+    description: "Opt-in finite branching story graph declaring the starting scene, named endings, optional bounded state, and authored transitions."
+    examples:
+      - entry: SC001
+        endings:
+          - scene_id: SC003
+            code: resolved_cleanly
+            label: "Incident resolved cleanly"
+        state:
+          checked_logs:
+            type: boolean
+            initial: false
+        transitions:
+          - id: TR001
+            from: SC001
+            to: SC002
+            kind: choice
+            label: "Inspect the error logs first"
+            effects:
+              checked_logs: true
+          - id: TR002
+            from: SC002
+            to: SC003
+            kind: default
+            label: "Proceed to final resolution"
+    required: [ entry, endings, transitions ]
+    properties:
+      entry:
+        $ref: "#/$defs/graph_scene_id"
+        description: "Scene identifier where every playable run begins with declared initial state."
+        examples: [ "SC001" ]
+      endings:
+        type: array
+        minItems: 1
+        description: "One or more terminal scenes that complete a playable run with a named outcome."
+        examples:
+          - - scene_id: SC003
+              code: resolved_cleanly
+              label: "Incident resolved cleanly"
+        items: { $ref: "#/$defs/graph_ending" }
+      state:
+        type: object
+        maxProperties: 16
+        description: "Optional bounded map of up to sixteen finite boolean or enum state variables initialized before entering entry."
+        examples:
+          - checked_logs:
+              type: boolean
+              initial: false
+        propertyNames: { $ref: "#/$defs/graph_code" }
+        additionalProperties: { $ref: "#/$defs/graph_variable" }
+      transitions:
+        type: array
+        description: "Ordered list of authored choice and default transitions connecting declared scenes in the story graph."
+        examples:
+          - - id: TR001
+              from: SC001
+              to: SC002
+              kind: default
+              label: "Continue to the next scene"
+        items: { $ref: "#/$defs/graph_transition" }
+
+  graph_ending:
+    type: object
+    additionalProperties: false
+    description: "Terminal scene declaration pairing a unique scene identifier with a stable outcome code and display label."
+    examples:
+      - scene_id: SC003
+        code: resolved_cleanly
+        label: "Incident resolved cleanly"
+        outcome_summary: "The responder verified root cause before restarting the service."
+    required: [ scene_id, code, label ]
+    properties:
+      scene_id:
+        $ref: "#/$defs/graph_scene_id"
+        description: "Unique scene identifier designating this terminal ending in the story graph."
+        examples: [ "SC003" ]
+      code:
+        $ref: "#/$defs/graph_code"
+        description: "Unique graph-local snake_case code identifying this ending outcome for analysis and playback."
+        examples: [ "resolved_cleanly" ]
+      label:
+        $ref: "#/$defs/graph_text"
+        description: "Short human-readable ending title presented when the reader reaches this terminal scene."
+        examples: [ "Incident resolved cleanly" ]
+      outcome_summary:
+        $ref: "#/$defs/graph_text"
+        description: "Optional concise summary explaining what this terminal outcome represents for the reader."
+        examples: [ "The responder verified root cause before restarting the service." ]
+
+  graph_variable:
+    type: object
+    additionalProperties: false
+    description: "Finite state variable declaration specifying a boolean or bounded enum domain and its explicit initial value."
+    examples:
+      - type: boolean
+        initial: false
+      - type: enum
+        initial: cautious
+        values: [ cautious, bold ]
+    required: [ type, initial ]
+    properties:
+      type:
+        enum: [ boolean, enum ]
+        description: "Finite domain kind for this state variable: either a boolean flag or an enumerated string."
+        examples: [ "boolean", "enum" ]
+      initial:
+        $ref: "#/$defs/graph_value"
+        description: "Initial value assigned to this state variable before the reader enters the entry scene."
+        examples: [ false, "cautious" ]
+      values:
+        type: array
+        minItems: 1
+        maxItems: 16
+        uniqueItems: true
+        description: "Allowed distinct string values for an enum state variable, bounded to at most sixteen values."
+        examples:
+          - [ cautious, bold ]
+        items: { $ref: "#/$defs/graph_text" }
+    if:
+      properties:
+        type: { const: boolean }
+    then:
+      properties:
+        initial: { type: boolean }
+      not: { required: [ values ] }
+    else:
+      required: [ values ]
+      properties:
+        initial: { type: string }
+
+  graph_assignments:
+    type: object
+    maxProperties: 16
+    description: "Map of declared state variable keys to scalar values used as conjunctive equality guards or atomic effects."
+    examples:
+      - checked_logs: true
+    propertyNames: { $ref: "#/$defs/graph_code" }
+    additionalProperties: { $ref: "#/$defs/graph_value" }
+
+  graph_transition:
+    type: object
+    additionalProperties: false
+    description: "Authored directed move between two scenes with a stable transition identifier, kind, label, optional guard, and optional effects."
+    examples:
+      - id: TR001
+        from: SC001
+        to: SC002
+        kind: choice
+        label: "Inspect the error logs first"
+        when:
+          checked_logs: false
+        effects:
+          checked_logs: true
+    required: [ id, from, to, kind, label ]
+    properties:
+      id:
+        type: string
+        pattern: "^TR[0-9]{3}$"
+        description: "Stable transition identifier uniquely naming this move for playback, replay, and diagnostics."
+        examples: [ "TR001" ]
+      from:
+        $ref: "#/$defs/graph_scene_id"
+        description: "Source scene identifier where this transition is offered to the reader."
+        examples: [ "SC001" ]
+      to:
+        $ref: "#/$defs/graph_scene_id"
+        description: "Destination scene identifier entered after this transition is taken and its effects apply."
+        examples: [ "SC002" ]
+      kind:
+        enum: [ choice, default ]
+        description: "Transition kind: an authored reader choice or the single unguarded default fallback when no choice is eligible."
+        examples: [ "choice", "default" ]
+      label:
+        $ref: "#/$defs/graph_text"
+        description: "Authored prompt label for this transition; retained in source data even when a default renders as Continue."
+        examples: [ "Inspect the error logs first" ]
+      when:
+        $ref: "#/$defs/graph_assignments"
+        description: "Optional conjunctive equality guard evaluated against pre-transition state on choice transitions; forbidden on defaults."
+        examples:
+          - checked_logs: false
+      effects:
+        $ref: "#/$defs/graph_assignments"
+        description: "Optional typed state variable assignments applied atomically once when this transition is accepted."
+        examples:
+          - checked_logs: true
+    if:
+      properties:
+        kind: { const: default }
+    then:
+      not: { required: [ when ] }
+
+properties:
+  version:
+    description: "Document version required for a scenes file that declares an opt-in branching graph."
+    type: string
+    const: "1.1.0"
+    examples: [ "1.1.0" ]
+
+  narrative_arc:
+    type: string
+    description: "The shape of the whole argument, such as problem and solution or a journey. It names no beats; `structure_framework` does."
+    enum: [ problem_solution, journey, debate, mystery, framework, case_driven, mixed ]
+
+  structure_framework:
+    $ref: "#/$defs/structure_framework"
+    description: "The structural framework whose beats the scenes name in `beat`. Optional; a scene may name a beat only when it is set."
+
+  scenes:
+    description: "Record the shared steps of the argument in source order."
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^SC[0-9]{3}$", description: "Stable scene identifier reused by scripts, shots, and variants." }
+        title: { type: string, description: "Short scene label for authors and outline readers." }
+
+        idea:
+          type: string
+          description: "The scene's one idea, in one sentence."
+          examples: [ "One model replaces the documents that disagree." ]
+
+        beat:
+          description: "The scene's beat in the root `structure_framework`. Optional: a scene may name none, a beat may repeat, and a structure need not be complete."
+          anyOf:
+            - { $ref: "#/$defs/beat_abt" }
+            - { $ref: "#/$defs/beat_three_act" }
+            - { $ref: "#/$defs/beat_scqa" }
+
+        pays_off:
+          examples:
+            - - SC001
+          type: array
+          uniqueItems: true
+          description: >
+            Name existing setup scenes that precede this payoff in the source scenes array. If SC003 pays off SC001, a variant ordered [SC003, SC001] triggers the payoff-without-earlier-setup advisory even when source order passes validation.
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        abt_role:
+          type: string
+          enum: [ and, but, therefore ]
+          description: >
+            The scene's place in the argument's three clauses: the agreed situation, the problem, or what follows. Left out on a scene outside the argument, such as a closing call to action. It is independent of `beat`, which names a beat of the root `structure_framework`.
+          examples: [ "but" ]
+
+        role:
+          type: string
+          description: "What the scene does for the audience, such as hook, teach or proof. Independent of `beat`: a scene in the `setup` beat need not have the `setup` role."
+          enum: [ hook, setup, teach, deepen, proof, turn, payoff, recap, close ]
+
+        timebox:
+          examples:
+            - min: 0.5
+              target: 1.5
+              max: 2
+          description: "Shared scene budget in fractional minutes. Keep the authored target here and put a room-specific adjustment in the variant override."
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/timebox"
+
+        covers:
+          examples:
+            - claims:
+                - CLM001
+              concepts:
+                - C001
+          description: "Group the goals, concepts, claims, and other material explicitly addressed in the scene by entity kind."
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/refs"
+
+        supports_goals:
+          type: array
+          description: "List audience outcomes this scene advances. Use covers for the grouped inventory of material explicitly addressed."
+          items: { type: string, pattern: "^G[0-9]{3}$" }
+
+        anticipated_questions:
+          type: array
+          description: "Q&A entries likely to emerge from this scene."
+          items: { type: string, pattern: "^AQ[0-9]{3}$" }
+
+        sequence:
+          description: >
+            Optional previous and next links for the intended base running order. Delivery uses explicit variant selection first and falls back to source order when it cannot use sequence links. Payoff validation uses source order.
+          type: object
+          additionalProperties: false
+          properties:
+            prev: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene intended immediately before this one in base delivery." }
+            next: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene intended immediately after this one in base delivery." }
+
+        script_hooks:
+          type: object
+          additionalProperties: false
+          description: "Pointers for script generation; the actual script can be generated."
+          properties:
+            opening_line: { type: string, description: "Suggest how the script should open this scene." }
+            key_points:
+              description: "List the points a script should make during the scene."
+              type: array
+              items: { type: string }
+            call_to_action: { type: string, description: "Suggest what the audience should do after the scene." }
+            speaker_notes: { type: string, description: "Record delivery guidance to consider while wording the script." }
+
+        slide_hooks:
+          type: object
+          additionalProperties: false
+          description: "Optional cues about the material a deck should show."
+          properties:
+            suggested_slides:
+              description: "Describe possible visual beats the deck can draw from."
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  id: { type: string, pattern: "^SL[0-9]{3}$", description: "Stable identifier for the suggestion within the authored narrative." }
+                  kind: { type: string, enum: [ title, concept, diagram, code, demo, quote, recap, appendix ], description: "Choose the visual role the suggested slide should serve." }
+                  title: { type: string, description: "Give the slide suggestion a label that summarizes its point." }
+                  bullets: { type: array, items: { type: string }, description: "List candidate points to emphasize while building the slide." }
+                  refs:
+                    description: "Link the suggestion to relevant material in the narrative."
+                    $ref: "urn:narrative:metamodel:1.0.0#/$defs/refs"
+                required: [ id, kind, title ]
+
+      required: [ id, title, role, timebox, covers ]
+
+  graph:
+    $ref: "#/$defs/scene_graph"
+    description: "Opt-in finite branching story graph declaring entry, named endings, optional bounded state, and transitions between scenes."
+    examples:
+      - entry: SC001
+        endings:
+          - scene_id: SC002
+            code: done
+            label: "Story complete"
+        transitions:
+          - id: TR001
+            from: SC001
+            to: SC002
+            kind: default
+            label: "Continue to completion"
+
+required: [ version, narrative_arc, scenes, graph ]
+
+x-gdsm:
+  version: "1.0.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: orchestration
+  design_notes: >
+    Separate closed sibling contract for opt-in branching stories, dispatched by own-property presence of `graph` on the parsed scenes document. Keeps `urn:narrative:scenes:1.0.0` byte-for-byte unchanged for graph-absent decks and films while preserving linear `scenes`, `sequence`, source-order `pays_off`, and variant selection.
+  non_goals:
+    - "Shots and lines, which belong to the film file"
+    - "Unbounded runtime expressions or arbitrary scripting inside transitions"
+  status: review

@@ -1,0 +1,14 @@
+version: "1.0.0"
+narrative_id: N001
+generation:
+  status: draft
+voice:
+  language: en-US
+script:
+  scenes:
+    - scene_id: SC001
+      spoken_text: "Maintaining separate slide decks and film scripts introduces silent drift. A single Narrative manifest keeps every claim and scene aligned."
+    - scene_id: SC002
+      spoken_text: "By resolving the authored graph once, validation, MCP inspection, and deck projection share the exact same entity inventory."
+    - scene_id: SC003
+      spoken_text: "The sibling presentation IR records every scene, claim, concept, asset, and evidence reference so provenance stays verifiable after rendering."

@@ -1,0 +1,177 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:variants:1.0.0"
+title: "Narrative Delivery Variants"
+description: >
+  Delivery variants for one narrative. A narrative describes a single argument; a variant describes one occasion on which that argument is delivered, as a selection over the base scene set plus narrow overrides. Editing a scene therefore reaches every variant that still includes it.
+
+  Use variants when the same material is delivered to several rooms with different slot lengths, audiences or confidentiality regimes. A variant never restates a scene's content: a variant that needs different content needs a different scene.
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    description: "Document version used for the list of delivery variants."
+
+  variants:
+    type: array
+    minItems: 1
+    description: "Every occasion this narrative is delivered on."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: "^DLV[0-9]{3}$"
+          description: "Stable identifier used when selecting this delivery occasion."
+
+        name:
+          type: string
+          description: "The occasion, as a person would name it."
+
+        date:
+          type: string
+          format: date
+          description: "Calendar date scheduled or recorded for this delivery occasion."
+
+        duration_minutes:
+          type: integer
+          minimum: 1
+          description: >
+            Minutes available for content, excluding questions. The validator compares the sum of the variant's effective scene timeboxes against this number, so a cut that does not fit its slot is an error rather than a discovery made in the room. For a spoken film cut it is also the budget its running-time estimate is compared with, in place of the narrative-wide intent duration.
+
+        language:
+          type: string
+          description: "Delivery language as a BCP 47 tag, for example pl-PL."
+
+        confidentiality:
+          type: string
+          enum: [ public, internal ]
+          description: "Describe whether the occasion is public or internal. Review the assets' sensitivity, risk, and topics to judge what is suitable for this room."
+
+        hero_talk_id:
+          type: string
+          description: >
+            Identifier of the talk this delivery belongs to in a portfolio model, when one is kept. Held as a plain string because it names an entity outside this narrative, and nothing here resolves it.
+
+        audience_note:
+          type: string
+          description: >
+            How this room differs from the audience the narrative's intent describes. Only the difference; the intent carries the rest.
+
+        scene_selection:
+          type: object
+          additionalProperties: false
+          description: "Which scenes this variant delivers, in the order it delivers them."
+          properties:
+            scene_ids:
+              examples:
+                - - SC003
+                  - SC001
+              type: array
+              minItems: 1
+              description: "Select shared scene identifiers in the order this variant delivers them. This order can change whether a setup reaches the audience before its payoff."
+              items:
+                type: string
+                pattern: "^SC[0-9]{3}$"
+
+            overrides:
+              examples:
+                - - scene_ref: SC003
+                    timebox_minutes: 1
+                    note: Use the short rollback walkthrough for this session.
+              type: array
+              description: "Record a timing adjustment and its rationale for a selected scene. A variant override supplies the effective target for that occasion while the scene keeps its authored timebox."
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  scene_ref:
+                    type: string
+                    pattern: "^SC[0-9]{3}$"
+                    description: "The scene being adjusted. It must be one this variant includes."
+                  timebox_minutes:
+                    type: number
+                    minimum: 0
+                    description: "Minutes this scene runs for in this variant, replacing its target. Fractions are allowed."
+                  note:
+                    type: string
+                    description: "Why this scene runs differently here."
+                required: [ scene_ref ]
+          required: [ scene_ids ]
+
+        asset_substitutions:
+          examples:
+            - - replace_ref: A001
+                with_ref: A002
+                why: Use the synthetic release timeline in the public workshop.
+          type: array
+          description: "Record which assets this room uses in place of the shared defaults. Review room suitability and give the reason so another speaker can preserve the intended point."
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              replace_ref:
+                type: string
+                description: "Identify the shared asset to replace in this room."
+              with_ref:
+                type: string
+                description: "The asset this room sees instead."
+              why:
+                type: string
+                description: "Why the substitution is needed here."
+            required: [ replace_ref, with_ref ]
+
+        film:
+          type: object
+          additionalProperties: false
+          description: >
+            How this occasion is rendered as a film. Present only on variants delivered as a film. The variant's language selects the script, and so the words of every line and on-screen text; the film file supplies the lines, texts and shots the variant's selected scenes hold.
+          properties:
+            voice:
+              type: object
+              additionalProperties: false
+              description: "The voice track of this cut."
+              properties:
+                source:
+                  type: string
+                  enum: [ recorded, synthesized, none ]
+                  description: >
+                    Who speaks the lines. `none` is a cut whose lines are shown as on-screen text and timed by reading time. `recorded` and `synthesized` are spoken cuts, timed by an estimate from the script's pace until recordings exist.
+                  examples: [ "none" ]
+              required: [ source ]
+              examples:
+                - { source: "none" }
+            max_seconds:
+              type: integer
+              minimum: 1
+              description: "The longest acceptable running time of this cut, in seconds."
+              examples: [ 180 ]
+          required: [ voice ]
+          examples:
+            - { voice: { source: "none" }, max_seconds: 180 }
+
+        status:
+          type: string
+          enum: [ planned, rehearsed, delivered, cancelled ]
+          description: "Record how far this delivery has progressed toward presentation."
+
+        notes:
+          type: string
+          description: "Anything about this occasion that the fields above do not hold."
+
+      required: [ id, name, scene_selection ]
+
+required: [ version, variants ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: delivery
+  design_notes: >
+    A variant is one occasion. Its `film` block says that the occasion is a film, whose voice it has, and its longest acceptable running time; the variant's language selects the script. A cut with no voice shows its lines on screen.
+  non_goals:
+    - "Voice takes, timing by recording, captions, output frame shapes and music, which arrive with their producers"
+  status: review

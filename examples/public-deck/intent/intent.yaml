@@ -1,0 +1,18 @@
+version: "1.0.0"
+topic_statement: "Author one checked Narrative source and project synchronized deck and film outputs with traceable provenance."
+audience:
+  level: intermediate
+  roles: [developer, architect]
+goals:
+  - id: G001
+    statement: "Authors understand how one validated Narrative graph feeds deterministic deck projection."
+    priority: must
+  - id: G002
+    statement: "Teams verify slide provenance back to authored scenes, claims, and evidence without manual YAML inventories."
+    priority: must
+constraints:
+  duration_minutes: 15
+  language: en-US
+  format: lecture
+north_star:
+  statement: "One authored Narrative, verifiable in every delivery."

@@ -1,0 +1,22 @@
+version: "1.0.0"
+name: "Single-Source Narrative Delivery"
+id: "N001"
+planes:
+  intent:
+    folder: "intent"
+    intent: "intent/intent.yaml"
+  knowledge:
+    folder: "knowledge"
+    concepts: "knowledge/concepts.yaml"
+    claims: "knowledge/claims.yaml"
+    evidence: "knowledge/evidence.yaml"
+    assets: "knowledge/assets.yaml"
+  orchestration:
+    folder: "orchestration"
+    scenes: "orchestration/scenes.yaml"
+  delivery:
+    folder: "delivery"
+    script: "delivery/script.en-US.yaml"
+    variants: "delivery/variants.yaml"
+  assurance:
+    folder: "assurance"

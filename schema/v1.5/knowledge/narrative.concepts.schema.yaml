@@ -1,0 +1,76 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:concepts:1.0.0"
+title: "Narrative Concepts"
+description: "Define the terms the audience needs to follow the argument and connect them to their uses."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    description: "Document version used for this glossary of concepts."
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  concepts:
+    type: array
+    description: "Canonical terms, definitions, and conceptual dependencies."
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^C[0-9]{3}$", description: "Stable identifier used by claims and scenes that refer to this term." }
+        term: { type: string, description: "Canonical term for speakers and authors to reuse consistently." }
+        definition: { type: string, examples: ["A rollback restores an earlier deployed version of an application."], description: "State the meaning of the term precisely enough to distinguish it from nearby concepts." }
+        summary: { type: string, examples: ["Return to the previous application version."], description: "Give a short display gloss for readers scanning a glossary or outline." }
+        tags:
+          description: "Group concepts by topics useful for finding related terms."
+          type: array
+          items: { type: string }
+
+        misconceptions:
+          description: "Record plausible misunderstandings the explanation should correct explicitly."
+          type: array
+          items: { type: string }
+
+        prerequisites:
+          type: array
+          description: "Concept IDs required to understand this concept."
+          items: { type: string, pattern: "^C[0-9]{3}$" }
+
+        used_in_claims:
+          type: array
+          description: "Claims that rely on this concept."
+          items: { type: string, pattern: "^CLM[0-9]{3}$" }
+
+        taught_in_scenes:
+          type: array
+          description: "Scenes where this concept is explained."
+          items: { type: string, pattern: "^SC[0-9]{3}$" }
+
+        illustrated_by_assets:
+          type: array
+          description: "Assets that make the meaning concrete for the audience."
+          items: { type: string, pattern: "^A[0-9]{3}$" }
+
+        anticipated_questions:
+          type: array
+          description: "Q&A entries related to this concept."
+          items: { type: string, pattern: "^AQ[0-9]{3}$" }
+
+        x-sources:
+          type: array
+          description: "External URLs for further reading or preparation."
+          items: { type: string, format: uri }
+
+        external_concepts:
+          $ref: "urn:narrative:metamodel:1.0.0#/$defs/external_links"
+          description: >
+            Concepts held in other models that this concept stands for, such as a concept of a course
+            model. The linked model owns the authoritative definition; the definition here is how
+            this narrative words the term for its audience.
+          examples:
+            - [{ model: course, project: sample, entity_id: CON001 }]
+
+      required: [id, term, definition]
+
+required: [version, concepts]

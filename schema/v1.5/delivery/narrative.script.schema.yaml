@@ -1,0 +1,291 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:script:1.0.0"
+title: "Narrative Script"
+description: "Supply per-language wording and speaker cues for the narrative's shared scenes and film lines."
+type: object
+additionalProperties: false
+
+properties:
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  narrative_id:
+    type: string
+    description: "Optional ID of the narrative root document."
+    pattern: "^N[0-9]{3}$"
+
+  generation:
+    type: object
+    additionalProperties: false
+    description: "Metadata about how this script was produced."
+    properties:
+      status:
+        type: string
+        enum: [ draft, reviewed, approved, generated ]
+      generator:
+        type: object
+        additionalProperties: false
+        properties:
+          name: { type: string }
+          version: { type: string }
+          prompt_ref: { type: string, description: "Optional prompt template identifier." }
+          model: { type: string, description: "Model name used to generate, if any." }
+        required: [ name ]
+      created_at: { type: string, format: date-time }
+      updated_at: { type: string, format: date-time }
+    required: [ status ]
+
+  voice:
+    type: object
+    additionalProperties: false
+    description: "Style constraints for spoken text."
+    properties:
+      language: { type: string, description: "e.g., pl-PL, en-US" }
+      persona: { type: string, description: "e.g., pragmatic architect, storyteller" }
+      reading_level:
+        type: string
+        enum: [ simple, standard, technical ]
+      tone:
+        type: string
+        enum: [ serious, pragmatic, playful, inspirational, mixed ]
+      pacing:
+        type: object
+        additionalProperties: false
+        properties:
+          words_per_minute_target: { type: integer, minimum: 60, maximum: 240 }
+          pauses:
+            type: string
+            enum: [ few, normal, many ]
+          seconds_between_lines:
+            type: number
+            minimum: 0
+            description: >
+              Silence assumed between two film lines when a spoken cut's running time is estimated from this script's pace.
+            examples: [ 0.5 ]
+    required: [ language ]
+
+  script:
+    type: object
+    additionalProperties: false
+    properties:
+      overview:
+        type: string
+        description: "1-2 paragraph high-level script summary (optional)."
+
+      scenes:
+        type: array
+        description: "Script is primarily scene-based; must reference SC###."
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            scene_id:
+              examples:
+                - SC003
+              description: "Reference the authored scene being worded or annotated. Reuse its identifier across languages."
+              type: string
+              pattern: "^SC[0-9]{3}$"
+
+            title:
+              type: string
+              description: "Optional scene title for readability (can mirror scenes.yaml)."
+
+            timebox_minutes:
+              type: object
+              additionalProperties: false
+              description: "Time budget for this scene in minutes. Fractions are allowed."
+              properties:
+                target: { type: number, minimum: 0 }
+                min: { type: number, minimum: 0 }
+                max: { type: number, minimum: 0 }
+              required: [ target ]
+
+            spoken_text:
+              type: string
+              description: "The actual words to say in this scene."
+
+            lines:
+              type: array
+              minItems: 1
+              description: >
+                This language's words for the film lines of this scene. A line's identity, scene and order come from the film file; this list only words it. In a cut with a voice the words are spoken; in a cut without one they are shown on screen.
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  line_ref:
+                    type: string
+                    pattern: "^LN[0-9]{3}$"
+                    description: "The film line being worded."
+                    examples: [ "LN003" ]
+                  text:
+                    type: string
+                    description: "The line's words in this script's language, exactly as spoken or shown."
+                    examples: [ "Every picture of the checkout is drawn from one model." ]
+                required: [ line_ref, text ]
+              examples:
+                - [ { line_ref: "LN003", text: "Every picture of the checkout is drawn from one model." } ]
+
+            cues:
+              type: array
+              description: "Delivery cues (non-verbal / stage directions)."
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  kind:
+                    type: string
+                    enum: [ pause, emphasize, gesture, move, breathe, repeat, ask, demo, transition ]
+                  note: { type: string }
+                  at:
+                    type: string
+                    description: "Optional anchor: a short excerpt or marker within spoken_text."
+                required: [ kind ]
+
+            interactive:
+              type: array
+              description: "Audience interaction moments tied to this scene."
+              items:
+                type: object
+                additionalProperties: false
+                properties:
+                  id:
+                    type: string
+                    description: "Optional local ID, e.g. INT001"
+                    pattern: "^[A-Z]{3}[0-9]{3}$"
+                  kind:
+                    type: string
+                    enum: [ poll, hands_up, cold_call, pair_discussion, short_exercise, rhetorical ]
+                  prompt: { type: string }
+                  expected_duration_seconds: { type: integer, minimum: 0 }
+                  fallback:
+                    type: string
+                    description: "What to do if audience doesn't respond."
+                  refs:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      concepts:
+                        type: array
+                        items: { type: string, pattern: "^[A-Z]{1,5}[0-9]{3}$" }
+                      claims:
+                        type: array
+                        items: { type: string, pattern: "^[A-Z]{1,5}[0-9]{3}$" }
+                      assets:
+                        type: array
+                        items: { type: string, pattern: "^[A-Z]{1,5}[0-9]{3}$" }
+                required: [ kind, prompt ]
+
+            slide_plan:
+              type: object
+              additionalProperties: false
+              description: "Optional mapping if slides exist; scene can map to many slides."
+              properties:
+                slide_ids:
+                  type: array
+                  items: { type: string, pattern: "^SL[0-9]{3}$" }
+                slide_notes:
+                  type: string
+                  description: "Notes about pacing with slides."
+              required: [ slide_ids ]
+
+            refs:
+              type: object
+              additionalProperties: false
+              description: "Traceability: what content this scene/script relies on."
+              properties:
+                concepts:
+                  type: array
+                  items: { type: string, pattern: "^C[0-9]{3}$" }
+                claims:
+                  type: array
+                  items: { type: string, pattern: "^CLM[0-9]{3}$" }
+                evidence:
+                  type: array
+                  items: { type: string, pattern: "^E[0-9]{3}$" }
+                assets:
+                  type: array
+                  items: { type: string, pattern: "^A[0-9]{3}$" }
+                questions:
+                  type: array
+                  items: { type: string, pattern: "^AQ[0-9]{3}$" }
+          required: [ scene_id ]
+          anyOf:
+            - required: [ spoken_text ]
+            - required: [ lines ]
+
+      appendix:
+        type: object
+        additionalProperties: false
+        properties:
+          glossary:
+            type: array
+            description: "Optional on-script glossary for consistent phrasing."
+            items:
+              type: object
+              additionalProperties: false
+              properties:
+                concept_id: { type: string, pattern: "^C[0-9]{3}$" }
+                preferred_phrase: { type: string }
+                avoid_phrases:
+                  type: array
+                  items: { type: string }
+                aliases:
+                  type: array
+                  minItems: 1
+                  items: { type: string }
+                  description: >
+                    Other names for the concept in this script's language. An alias may be used only where the concept is introduced, so the viewer learns that both names mean one thing.
+                  examples: [ [ "bounded context", "context" ] ]
+              required: [ concept_id, preferred_phrase ]
+
+          callouts:
+            type: array
+            description: "Optional reusable callouts for emphasis."
+            items:
+              type: object
+              additionalProperties: false
+              properties:
+                id: { type: string, pattern: "^CO[0-9]{3}$" }
+                text: { type: string }
+                used_in_scenes:
+                  type: array
+                  items: { type: string, pattern: "^SC[0-9]{3}$" }
+              required: [ id, text ]
+
+      on_screen:
+        type: array
+        minItems: 1
+        description: >
+          This language's words for each on-screen text of the film. A text's identity, role and order come from the film file; this list only words it.
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            text_ref:
+              type: string
+              pattern: "^OT[0-9]{3}$"
+              description: "The on-screen text being worded."
+              examples: [ "OT003" ]
+            text:
+              type: string
+              description: "The text as shown, in this script's language."
+              examples: [ "Checkout" ]
+          required: [ text_ref, text ]
+        examples:
+          - [ { text_ref: "OT001", text: "One model, every picture" } ]
+
+    required: [ scenes ]
+
+required: [ version, generation, voice, script ]
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: delivery
+  design_notes: >
+    One script per language holds every word. A film's lines and on-screen texts are worded here by reference to their identifiers in the film file, so the film file stays language-neutral. A scene entry needs spoken text or film lines; a scene made only of on-screen texts needs no entry.
+  non_goals:
+    - "Recordings, captions and pronunciation, which arrive with a voiced film"
+  status: review

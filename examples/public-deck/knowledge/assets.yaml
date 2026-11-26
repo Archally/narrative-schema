@@ -1,0 +1,14 @@
+version: "1.0.0"
+assets:
+  - id: A001
+    title: "Single-source Narrative delivery flow"
+    kind: example
+    summary: "Flow diagram showing one authored Narrative manifest feeding validation, presentation IR projection, and PDF output."
+    illustrates:
+      concepts: [C001]
+      claims: [CLM001]
+    used_in_scenes: [SC002]
+    media:
+      source:
+        file: "media/pipeline-overview.svg"
+      alt: "Three connected boxes: Authored Narrative feeds Presentation IR, which feeds Deck PDF with provenance links."
