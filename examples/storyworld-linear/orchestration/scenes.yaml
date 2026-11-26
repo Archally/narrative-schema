@@ -11,11 +11,13 @@ scenes:
     title: The storm warning
     role: setup
     timebox: { target: 1 }
+    supports_goals: [G001]
     covers: { concepts: [C002] }
   - id: SC003
     title: Tomas brings the lens
     role: turn
     timebox: { target: 1 }
+    supports_goals: [G001]
     covers: {}
   - id: SC004
     title: The lamp is relit
