@@ -12,7 +12,7 @@ npm run validate:example
 # Validate a model directory (positional path or --model)
 npm run validate -- path/to/model
 node tools/validator/cli.mjs examples/public-deck
-node tools/validator/cli.mjs --model examples/public-deck --schemas schema/v1.5
+node tools/validator/cli.mjs --model examples/public-deck --schemas schema/v1.6
 
 # Emit a structured JSON report
 node tools/validator/cli.mjs --model examples/public-deck --json
@@ -26,7 +26,7 @@ node tools/validator/cli.mjs --model path/to/model --compat
 | Flag | Default | Description |
 | --- | --- | --- |
 | `[PATH]` / `--model`, `-m` | `.narrative/v1` | Narrative model directory (containing `narrative.yaml`) or direct path to `narrative.yaml`. |
-| `--schemas`, `-s` | Auto-detected `schema/v1.5` | Direct schema version folder (for example `schema/v1.5`) or suite directory containing `schema/`. |
+| `--schemas`, `-s` | Auto-detected `schema/v1.6` | Direct schema version folder (for example `schema/v1.6`) or suite directory containing `schema/`. |
 | `--compat`, `-c` | `false` | Downgrade JSON Schema errors and missing-plane-file errors to warnings; cross-reference, structure, graph, variant, film, picture, and external-link errors stay fatal. |
 | `--json` | `false` | Print the structured `NarrativeValidationReport` JSON to stdout. |
 | `--help`, `-h` | `false` | Print CLI usage and exit 0. |
@@ -39,10 +39,11 @@ node tools/validator/cli.mjs --model path/to/model --compat
 2. **Duplicate IDs and cross-file references**: warns on duplicate entity IDs (`^[A-Z]{1,5}[0-9]{3}$`) and fails on unresolved local references across all schema-backed planes.
 3. **Scene structure**: validates `beat` values against root `structure_framework` and verifies `pays_off` targets exist, differ from self, and appear earlier in `scenes`.
 4. **Opt-in branching graph**: when `orchestration.scenes` declares `graph`, enforces `version: "1.1.0"`, unique scene IDs, valid entry/ending/transition references, non-empty endings with unique `scene_id`/`code`, no outgoing transitions from endings, at most one `default` transition per scene without a `when` guard, and declared state variable domains in `when`/`effects` (fatal in both strict and compat modes).
-5. **Delivery variants**: rejects duplicate scene selections, overrides targeting unselected scenes, and duration overruns; warns on missing timeboxes or under-filled duration budgets.
-6. **Film checks**: active only when `planes.orchestration.film` names a film file (contiguous lines per scene, valid shot line spans, unique language scripts, script word coverage, spoken timing estimates and `max_seconds` limits, anchor-in-span, analogy claim linkage, and single call-to-action per cut).
-7. **Picture and external links**: rejects duplicate `media.shows.subjects[].id` per asset and duplicate external entity links on goals or concepts.
-8. **Gap analysis (warnings only)**: reports goals uncovered by any scene, `strong` claims without `evidence_refs`, and evidence records unreferenced by any claim.
+5. **Storyworld and audience assumptions**: resolves character appearance scenes, story event scenes, transitions, required characters, required events, and audience assumed concepts and evidence to their declared entity kinds; rejects duplicate character or story-event IDs, repeated appearance scenes per character, repeated assumed concepts, cyclic event dependencies, `on_transitions` or `recorded_by` without a graph, unknown state keys, transitions that do not touch `occurs_in`, and incomplete `effects` assignments (fatal in both strict and compat modes).
+6. **Delivery variants**: rejects duplicate scene selections, overrides targeting unselected scenes, and duration overruns; warns on missing timeboxes or under-filled duration budgets.
+7. **Film checks**: active only when `planes.orchestration.film` names a film file (contiguous lines per scene, valid shot line spans, unique language scripts, script word coverage, spoken timing estimates and `max_seconds` limits, anchor-in-span, analogy claim linkage, and single call-to-action per cut).
+8. **Picture and external links**: rejects duplicate `media.shows.subjects[].id` per asset and duplicate external entity links on goals, concepts, or characters.
+9. **Gap analysis (warnings only)**: reports goals uncovered by any scene, `strong` claims without `evidence_refs`, and evidence records unreferenced by any claim.
 
 ## Format Validation Policy
 

@@ -257,6 +257,38 @@ function extractIntent(collector, pointer) {
       rawGoal.external_goals,
     );
   });
+
+  const audience = pointer.content.audience;
+  if (isRecord(audience)) {
+    asArray(audience.assumed_concepts).forEach((rawAssumption, index) => {
+      if (!isRecord(rawAssumption)) {
+        return;
+      }
+      const basePath = `audience.assumed_concepts[${index}]`;
+      addRef(
+        collector,
+        null,
+        rawAssumption.concept,
+        'assumes_concept',
+        'audience.assumed_concepts.concept',
+        'intent',
+        pointer.label,
+        file,
+        `${basePath}.concept`,
+      );
+      addRefArray(
+        collector,
+        null,
+        rawAssumption.evidence,
+        'assumption_backed_by_evidence',
+        'audience.assumed_concepts.evidence',
+        'intent',
+        pointer.label,
+        file,
+        `${basePath}.evidence`,
+      );
+    });
+  }
 }
 
 /**
@@ -441,6 +473,128 @@ function extractAssets(collector, pointer) {
         });
       });
     }
+  });
+}
+
+/**
+ * @param {any} collector
+ * @param {any} pointer
+ */
+function extractStoryworld(collector, pointer) {
+  if (!isRecord(pointer.content)) {
+    return;
+  }
+  const file = pointer.location.file;
+
+  asArray(pointer.content.characters).forEach((rawCharacter, index) => {
+    if (!isRecord(rawCharacter)) {
+      return;
+    }
+    const id = asNonEmptyString(rawCharacter.id);
+    if (!id) {
+      return;
+    }
+    const basePath = `characters[${index}]`;
+    addEntity(collector, {
+      id,
+      entityType: 'character',
+      plane: 'knowledge',
+      pointerLabel: pointer.label,
+      name: asNonEmptyString(rawCharacter.name) ?? id,
+      location: { file, path: basePath },
+      data: rawCharacter,
+    });
+    asArray(rawCharacter.appearances).forEach((rawAppearance, appIdx) => {
+      if (!isRecord(rawAppearance)) {
+        return;
+      }
+      addRef(
+        collector,
+        id,
+        rawAppearance.scene,
+        'appears_in_scene',
+        'appearances.scene',
+        'knowledge',
+        pointer.label,
+        file,
+        `${basePath}.appearances[${appIdx}].scene`,
+      );
+    });
+    addExternalLinks(
+      collector,
+      id,
+      'character',
+      'external_characters',
+      'knowledge',
+      pointer.label,
+      file,
+      `${basePath}.external_characters`,
+      rawCharacter.external_characters,
+    );
+  });
+
+  asArray(pointer.content.story_events).forEach((rawEvent, index) => {
+    if (!isRecord(rawEvent)) {
+      return;
+    }
+    const id = asNonEmptyString(rawEvent.id);
+    if (!id) {
+      return;
+    }
+    const basePath = `story_events[${index}]`;
+    addEntity(collector, {
+      id,
+      entityType: 'story_event',
+      plane: 'knowledge',
+      pointerLabel: pointer.label,
+      name: asNonEmptyString(rawEvent.title) ?? id,
+      location: { file, path: basePath },
+      data: rawEvent,
+    });
+    addRef(
+      collector,
+      id,
+      rawEvent.occurs_in,
+      'occurs_in_scene',
+      'occurs_in',
+      'knowledge',
+      pointer.label,
+      file,
+      `${basePath}.occurs_in`,
+    );
+    addRefArray(
+      collector,
+      id,
+      rawEvent.on_transitions,
+      'occurs_on_transition',
+      'on_transitions',
+      'knowledge',
+      pointer.label,
+      file,
+      `${basePath}.on_transitions`,
+    );
+    addRefArray(
+      collector,
+      id,
+      rawEvent.required_characters,
+      'requires_character',
+      'required_characters',
+      'knowledge',
+      pointer.label,
+      file,
+      `${basePath}.required_characters`,
+    );
+    addRefArray(
+      collector,
+      id,
+      rawEvent.requires_events,
+      'requires_event',
+      'requires_events',
+      'knowledge',
+      pointer.label,
+      file,
+      `${basePath}.requires_events`,
+    );
   });
 }
 
@@ -1160,6 +1314,9 @@ export function extractNarrativeOccurrences(source) {
         break;
       case 'assets':
         extractAssets(collector, pointer);
+        break;
+      case 'storyworld':
+        extractStoryworld(collector, pointer);
         break;
       case 'scenes':
         extractScenes(collector, pointer);

@@ -19,6 +19,7 @@ import {
   NARRATIVE_ROOT_SCHEMA_URN,
   NARRATIVE_SCENES_SCHEMA_URN_V1,
   NARRATIVE_SCENES_SCHEMA_URN_V1_1,
+  NARRATIVE_STORYWORLD_SCHEMA_URN,
   NarrativeReadError,
   readNarrativeSource,
   resolveManifestPath,
@@ -47,15 +48,15 @@ function compareVersionLinesDesc(left, right) {
 
 /**
  * Auto-detect the default Narrative schema folder relative to this validator module.
- * Checks deployed `../../schema/v1.5` (and highest `v<major>.<minor>` under `../../schema`),
- * then falls back to `../../v1/schema` and `./schema/v1.5`.
+ * Checks deployed `../../schema/v1.6` (and highest `v<major>.<minor>` under `../../schema`),
+ * then falls back to `../../v1/schema` and `./schema/v1.6`.
  *
  * @param {string} [baseDir]
  * @returns {string}
  */
 export function resolveDefaultSchemasDir(baseDir = VALIDATOR_DIR) {
   const deployedSchemaParent = path.resolve(baseDir, '..', '..', 'schema');
-  const pinnedLine = path.join(deployedSchemaParent, 'v1.5');
+  const pinnedLine = path.join(deployedSchemaParent, 'v1.6');
   if (fs.existsSync(path.join(pinnedLine, 'narrative.talk.schema.yaml'))) {
     return pinnedLine;
   }
@@ -75,7 +76,7 @@ export function resolveDefaultSchemasDir(baseDir = VALIDATOR_DIR) {
   if (fs.existsSync(path.join(sourceLayout, 'narrative.talk.schema.yaml'))) {
     return sourceLayout;
   }
-  return path.resolve('schema/v1.5');
+  return path.resolve('schema/v1.6');
 }
 
 /**
@@ -89,7 +90,7 @@ export function getStandaloneHelpText() {
     '',
     'Defaults:',
     '  --model, -m    .narrative/v1 (or positional PATH)',
-    '  --schemas, -s  schema/v1.5 (auto-detected relative to the validator)',
+    '  --schemas, -s  schema/v1.6 (auto-detected relative to the validator)',
     '  --compat, -c   relax strict schema failures into warnings (cross-schema and graph errors remain fatal)',
     '  --json         emit the structured validation report as JSON',
     '  --help, -h     show this help message',
@@ -97,13 +98,13 @@ export function getStandaloneHelpText() {
     'Checks performed:',
     '  1) Schema validation (Ajv draft-2020-12; format annotations uri, date-time, date are advisory)',
     '  2) Cross-file reference integrity and duplicate ID warnings',
-    '  3) Scene structure checks (beats, framework, pays_off order) and opt-in branching graph checks',
+    '  3) Scene structure checks (beats, framework, pays_off order), opt-in branching graph checks, and storyworld checks',
     '  4) Delivery variant checks, picture subject uniqueness, external link uniqueness, and gap warnings',
     '  5) Film checks when planes.orchestration.film names a film file',
     '',
     'Exit codes:',
     '  0  Passed (warnings or info lines may be present)',
-    '  1  Validation failed (schema, cross-reference, structure, graph, variant, film, picture, or link errors)',
+    '  1  Validation failed (schema, cross-reference, structure, graph, storyworld, variant, film, picture, or link errors)',
     '  2  Runner or usage error (invalid flags, missing root/manifest, YAML parse error, unavailable schemas)',
   ].join('\n');
 }
@@ -296,6 +297,7 @@ export {
   NARRATIVE_ROOT_SCHEMA_URN,
   NARRATIVE_SCENES_SCHEMA_URN_V1,
   NARRATIVE_SCENES_SCHEMA_URN_V1_1,
+  NARRATIVE_STORYWORLD_SCHEMA_URN,
   REQUIRED_NARRATIVE_SCHEMA_URNS,
   NarrativeReadError,
   NarrativeSchemaRegistryError,

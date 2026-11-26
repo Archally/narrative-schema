@@ -96,7 +96,7 @@ jobs:
             fs.writeFileSync(claimsPath, claimsText.replace('id: CLM001', 'id: CLM999'), 'utf8');
             const brokenRef = spawnSync(
               process.execPath,
-              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.5', '--model', brokenRefDir],
+              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.6', '--model', brokenRefDir],
               { encoding: 'utf8' },
             );
             assert.equal(brokenRef.status, 1, `expected exit 1 on broken ref, got ${brokenRef.status}`);
@@ -108,7 +108,7 @@ jobs:
             fs.writeFileSync(manifestPath, `${manifestText}\nunexpected_field: true\n`, 'utf8');
             const badSchema = spawnSync(
               process.execPath,
-              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.5', '--model', badSchemaDir],
+              ['tools/validator/cli.mjs', '--schemas', 'schema/v1.6', '--model', badSchemaDir],
               { encoding: 'utf8' },
             );
             assert.equal(badSchema.status, 1, `expected exit 1 on schema error, got ${badSchema.status}`);
@@ -187,7 +187,7 @@ jobs:
             const baseline = verify();
             assert.equal(baseline.status, 0, baseline.stdout + baseline.stderr);
 
-            const targetFile = path.join(copyRoot, 'schema/v1.5/narrative.talk.schema.yaml');
+            const targetFile = path.join(copyRoot, 'schema/v1.6/narrative.talk.schema.yaml');
             const original = fs.readFileSync(targetFile, 'utf8');
             fs.writeFileSync(targetFile, `${original}\n# tamper control\n`, 'utf8');
             const modified = verify();

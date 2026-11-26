@@ -471,3 +471,183 @@ test('validates deployed examples/public-deck when present in the checkout', () 
   assert.equal(report.summary.errors, 0);
   assert.equal(report.summary.warnings, 0);
 });
+
+test('validates storyworld and audience assumptions in strict and compat modes', (context) => {
+  const linearDir = createMinimalModel(context, { withGraph: false });
+  editYaml(linearDir, 'narrative.yaml', (doc) => {
+    const planes = /** @type {Record<string, Record<string, unknown>>} */ (doc.planes);
+    planes.knowledge.storyworld = 'knowledge/storyworld.yaml';
+  });
+  editYaml(linearDir, 'intent/intent.yaml', (doc) => {
+    const audience = /** @type {Record<string, unknown>} */ (doc.audience);
+    audience.assumed_concepts = [
+      { concept: 'C001', basis: 'Covered in onboarding workshop.', evidence: ['E001'] },
+    ];
+  });
+  put(linearDir, 'knowledge/storyworld.yaml', YAML.stringify({
+    version: '1.0.0',
+    characters: [
+      {
+        id: 'CHR001',
+        name: 'Mara',
+        appearances: [
+          { scene: 'SC001', presence: 'on_screen' },
+          { scene: 'SC002', presence: 'on_screen' },
+        ],
+        external_characters: [{ model: 'hero', project: 'sample', entity_id: 'PER001' }],
+      },
+    ],
+    story_events: [
+      { id: 'EVT001', title: 'Lamp cracks', occurs_in: 'SC001', required_characters: ['CHR001'] },
+      { id: 'EVT002', title: 'Lamp relit', occurs_in: 'SC002', required_characters: ['CHR001'], requires_events: ['EVT001'] },
+    ],
+  }));
+
+  const validStrict = validateNarrative({ modelPath: linearDir, schemasPath: SCHEMAS_DIR });
+  assert.equal(validStrict.exit_code, 0, JSON.stringify(validStrict.findings));
+  assert.deepEqual(validStrict.findings, []);
+
+  // Advisory-only mutation (entrance not before need) retains passing baseline verdict.
+  const advisoryDir = createMinimalModel(context, { withGraph: false });
+  editYaml(advisoryDir, 'narrative.yaml', (doc) => {
+    const planes = /** @type {Record<string, Record<string, unknown>>} */ (doc.planes);
+    planes.knowledge.storyworld = 'knowledge/storyworld.yaml';
+  });
+  put(advisoryDir, 'knowledge/storyworld.yaml', YAML.stringify({
+    version: '1.0.0',
+    characters: [{ id: 'CHR001', name: 'Mara', appearances: [{ scene: 'SC002', presence: 'on_screen' }] }],
+    story_events: [{ id: 'EVT001', title: 'Early need', occurs_in: 'SC001', required_characters: ['CHR001'] }],
+  }));
+  assert.equal(validateNarrative({ modelPath: advisoryDir, schemasPath: SCHEMAS_DIR }).exit_code, 0);
+
+  // Branching storyworld with on_transitions and recorded_by passes when aligned and fails on detached/incomplete/unknown.
+  const branchDir = createMinimalModel(context, { withGraph: true });
+  editYaml(branchDir, 'narrative.yaml', (doc) => {
+    const planes = /** @type {Record<string, Record<string, unknown>>} */ (doc.planes);
+    planes.knowledge.storyworld = 'knowledge/storyworld.yaml';
+  });
+  put(branchDir, 'knowledge/storyworld.yaml', YAML.stringify({
+    version: '1.0.0',
+    characters: [{ id: 'CHR001', name: 'Mara', appearances: [{ scene: 'SC001', presence: 'on_screen' }] }],
+    story_events: [
+      {
+        id: 'EVT001',
+        title: 'Proof accepted',
+        occurs_in: 'SC002',
+        on_transitions: ['TR001'],
+        recorded_by: ['verified'],
+      },
+    ],
+  }));
+  const branchValid = validateNarrative({ modelPath: branchDir, schemasPath: SCHEMAS_DIR });
+  assert.equal(branchValid.exit_code, 0, JSON.stringify(branchValid.findings));
+
+  // Cross-record error mutations remain fatal in both strict and compat modes.
+  const mutations = [
+    {
+      name: 'duplicate appearance scene with different presence',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.characters[0].appearances = [
+          { scene: 'SC001', presence: 'mentioned' },
+          { scene: 'SC001', presence: 'on_screen' },
+        ];
+      },
+      code: 'storyworld_duplicate_appearance_scene',
+    },
+    {
+      name: 'duplicate character id',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.characters.push({ id: 'CHR001', name: 'Duplicate Mara' });
+      },
+      code: 'storyworld_duplicate_character_id',
+    },
+    {
+      name: 'duplicate event id',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.story_events.push({ id: 'EVT001', title: 'Dup', occurs_in: 'SC001' });
+      },
+      code: 'storyworld_duplicate_event_id',
+    },
+    {
+      name: 'duplicate external_characters tuple',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.characters[0].external_characters.push({ model: 'hero', project: 'sample', entity_id: 'PER001', note: 'repeat' });
+      },
+      code: 'link_duplicate_external_entity',
+    },
+    {
+      name: 'duplicate assumed concept with different basis',
+      base: linearDir,
+      file: 'intent/intent.yaml',
+      mutate: (doc) => {
+        doc.audience.assumed_concepts.push({ concept: 'C001', basis: 'Second basis.' });
+      },
+      code: 'intent_duplicate_assumed_concept',
+    },
+    {
+      name: 'wrong-kind assumption evidence ref',
+      base: linearDir,
+      file: 'intent/intent.yaml',
+      mutate: (doc) => {
+        doc.audience.assumed_concepts[0].evidence = ['C001'];
+      },
+      code: 'invalid_reference_kind',
+    },
+    {
+      name: 'cyclic event dependencies',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.story_events[0].requires_events = ['EVT002'];
+      },
+      code: 'storyworld_event_dependency_cycle',
+    },
+    {
+      name: 'on_transitions without graph',
+      base: linearDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.story_events[0].on_transitions = ['TR001'];
+      },
+      code: 'storyworld_on_transitions_requires_graph',
+    },
+    {
+      name: 'recorded_by unknown state key',
+      base: branchDir,
+      file: 'knowledge/storyworld.yaml',
+      mutate: (doc) => {
+        doc.story_events[0].recorded_by = ['missing_key'];
+      },
+      code: 'storyworld_unknown_state_key',
+    },
+    {
+      name: 'incomplete effects for recorded_by',
+      base: branchDir,
+      file: 'orchestration/scenes.yaml',
+      mutate: (doc) => {
+        doc.graph.transitions[0].effects = { depth: 'deep' };
+      },
+      code: 'storyworld_incomplete_effects',
+    },
+  ];
+
+  for (const m of mutations) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-sw-mut-'));
+    context.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    fs.cpSync(m.base, dir, { recursive: true });
+    editYaml(dir, m.file, m.mutate);
+    const strict = validateNarrative({ modelPath: dir, schemasPath: SCHEMAS_DIR });
+    const compat = validateNarrative({ modelPath: dir, schemasPath: SCHEMAS_DIR, compat: true });
+    assert.equal(strict.exit_code, 1, `${m.name} strict`);
+    assert.equal(compat.exit_code, 1, `${m.name} compat`);
+    assert.ok(compat.findings.some((f) => f.code === m.code && f.severity === 'error'), `${m.name} expected ${m.code}`);
+  }
+});

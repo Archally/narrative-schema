@@ -1,6 +1,6 @@
 # Archally Narrative Schema
 
-Narrative is a YAML format for modeling talks, presentations, and films. It connects audience goals, claims and evidence, scenes, and delivery scripts. The [JSON Schema definitions](schema/v1.5/) describe the format.
+Narrative is a YAML format for modeling talks, presentations, and films. It connects audience goals, claims and evidence, scenes, and delivery scripts. The [JSON Schema definitions](schema/v1.6/) describe the format.
 
 ## Quickstart
 

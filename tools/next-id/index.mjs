@@ -36,7 +36,7 @@ function escapeRegExp(value) {
 
 /**
  * Auto-detect the default Narrative metamodel schema path relative to this tool.
- * Checks deployed `../../schema/v1.5/narrative.metamodel.schema.yaml`, then highest
+ * Checks deployed `../../schema/v1.6/narrative.metamodel.schema.yaml`, then highest
  * `../../schema/v<major>.<minor>`, then monorepo `../../v1/schema`.
  *
  * @param {string} [baseDir]
@@ -44,7 +44,7 @@ function escapeRegExp(value) {
  */
 export function resolveDefaultMetamodelPath(baseDir = NEXT_ID_DIR) {
   const deployedSchemaParent = path.resolve(baseDir, '..', '..', 'schema');
-  const pinnedCandidate = path.join(deployedSchemaParent, 'v1.5', 'narrative.metamodel.schema.yaml');
+  const pinnedCandidate = path.join(deployedSchemaParent, 'v1.6', 'narrative.metamodel.schema.yaml');
   if (fs.existsSync(pinnedCandidate)) {
     return pinnedCandidate;
   }
@@ -64,7 +64,7 @@ export function resolveDefaultMetamodelPath(baseDir = NEXT_ID_DIR) {
   if (fs.existsSync(sourceCandidate)) {
     return sourceCandidate;
   }
-  return path.resolve('schema/v1.5/narrative.metamodel.schema.yaml');
+  return path.resolve('schema/v1.6/narrative.metamodel.schema.yaml');
 }
 
 /**

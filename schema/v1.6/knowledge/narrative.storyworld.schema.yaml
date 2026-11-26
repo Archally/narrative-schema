@@ -1,0 +1,105 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:storyworld:1.0.0"
+title: "Narrative Storyworld"
+description: "Describe the characters who appear in a story and the events its scenes tell."
+type: object
+additionalProperties: false
+
+$defs:
+  appearance:
+    title: "Appearance"
+    description: "How one character is seen, heard, or mentioned in one scene."
+    type: object
+    additionalProperties: false
+    properties:
+      scene: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene in which the character appears, is heard, or is mentioned." }
+      presence:
+        type: string
+        enum: [ on_screen, heard, mentioned ]
+        description: >
+          Mark the character as visible, audible off screen, or only talked about. The first visible appearance is the character's entrance.
+      note: { type: string, description: "A short note on the character's part in the scene." }
+    required: [ scene, presence ]
+
+  character:
+    title: "Character"
+    description: "A person or personified agent whose presence the story tracks."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { type: string, pattern: "^CHR[0-9]{3}$", description: "Stable identifier that story events can reference." }
+      name: { type: string, minLength: 1, description: "Name shown in the cast and scene outline." }
+      summary: { type: string, description: "Short description of the character's role in the story." }
+      appearances:
+        type: array
+        description: "Record how the character is present or mentioned, with at most one entry per scene."
+        items: { $ref: "#/$defs/appearance" }
+      external_characters:
+        $ref: "urn:narrative:metamodel:1.0.0#/$defs/external_links"
+        description: "Entities in other models that this character represents, such as a persona or a person."
+    required: [ id, name ]
+
+  story_event:
+    title: "Story Event"
+    description: "Something that happens in the story and can matter to later events."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { type: string, pattern: "^EVT[0-9]{3}$", description: "Stable identifier that other story events can reference." }
+      title: { type: string, description: "Short label for the event." }
+      summary: { type: string, description: "Short account of what happens." }
+      occurs_in: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene that tells the event." }
+      on_transitions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: >
+          In a branching story, the event occurs only when one of these transitions is taken. Each transition enters or leaves the scene that tells the event. If this field is absent, the event occurs on every visit to its scene.
+        items: { type: string, pattern: "^TR[0-9]{3}$" }
+      required_characters:
+        type: array
+        uniqueItems: true
+        description: "Characters the event depends on."
+        items: { type: string, pattern: "^CHR[0-9]{3}$" }
+      requires_events:
+        type: array
+        uniqueItems: true
+        description: "Earlier events this event depends on. Event dependencies must be acyclic."
+        items: { type: string, pattern: "^EVT[0-9]{3}$" }
+      recorded_by:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: >
+          State variables in the branching story that relate to this event. Each listed transition assigns every named variable. For an event that occurs on every visit to its scene, these names identify variables that later choices may read.
+        items: { type: string, pattern: "^[a-z][a-z0-9_]*$" }
+    required: [ id, title, occurs_in ]
+
+properties:
+  version:
+    type: string
+    const: "1.0.0"
+    description: "Document version for the storyworld."
+  characters:
+    type: array
+    description: "Cast of the story."
+    items: { $ref: "#/$defs/character" }
+  story_events:
+    type: array
+    description: "Events told by the story's scenes."
+    items: { $ref: "#/$defs/story_event" }
+
+required: [ version ]
+anyOf:
+  - required: [ characters ]
+    properties:
+      characters: { type: array, minItems: 1 }
+  - required: [ story_events ]
+    properties:
+      story_events: { type: array, minItems: 1 }
+
+x-gdsm:
+  version: "1.0.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: knowledge
+  status: review

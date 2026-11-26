@@ -28,10 +28,12 @@ const EXPECTED_ACTIVE_PREFIXES = [
   'AW',
   'C',
   'CHK',
+  'CHR',
   'CLM',
   'CO',
   'DLV',
   'E',
+  'EVT',
   'G',
   'INT',
   'LN',
@@ -107,7 +109,7 @@ test('next-id source files contain zero workspace or tsx imports', () => {
   }
 });
 
-test('allowlist matches the 20 schema-backed Narrative prefixes and excludes reserved MU', () => {
+test('allowlist matches the schema-backed Narrative prefixes and excludes reserved MU', () => {
   const allowed = loadAllowedPrefixes(METAMODEL_PATH);
   assert.deepEqual([...allowed.keys()], EXPECTED_ACTIVE_PREFIXES);
   assert.equal(allowed.has('MU'), false, 'reserved prefix MU has schema: null and must be excluded');
@@ -124,7 +126,7 @@ test('allowlist matches the 20 schema-backed Narrative prefixes and excludes res
   }
   // INT uses ^[A-Z]{3}[0-9]{3}$ in narrative.script.schema.yaml and is declared in x-gdsm.schema_graph.
   assert.equal(allowed.get('INT')?.schema, 'delivery/narrative.script.schema.yaml');
-  assert.equal(schemaPrefixes.size, 19);
+  assert.deepEqual([...schemaPrefixes].sort(), EXPECTED_ACTIVE_PREFIXES.filter((prefix) => prefix !== 'INT'));
 });
 
 test('suggests max+1 with gaps, 001 when unused, handles duplicates, ignores reference-only IDs, and reports exhaustion', (context) => {
@@ -204,7 +206,7 @@ test('suggests max+1 with gaps, 001 when unused, handles duplicates, ignores ref
 
   const listRun = runCli(['--list']);
   assert.equal(listRun.status, 0, listRun.stderr);
-  assert.equal(listRun.stdout.trim().split('\n').length, 20);
+  assert.equal(listRun.stdout.trim().split('\n').length, EXPECTED_ACTIVE_PREFIXES.length);
 
   const helpRun = runCli(['--help']);
   assert.equal(helpRun.status, 0);

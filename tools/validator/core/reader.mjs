@@ -9,6 +9,7 @@ import YAML from 'yaml';
 export const NARRATIVE_ROOT_SCHEMA_URN = 'urn:narrative:talk:1.0.0';
 export const NARRATIVE_SCENES_SCHEMA_URN_V1 = 'urn:narrative:scenes:1.0.0';
 export const NARRATIVE_SCENES_SCHEMA_URN_V1_1 = 'urn:narrative:scenes:1.1.0';
+export const NARRATIVE_STORYWORLD_SCHEMA_URN = 'urn:narrative:storyworld:1.0.0';
 
 /**
  * Presence-dispatched scenes schema URN selection.
@@ -138,6 +139,15 @@ const SINGLE_POINTER_SPECS = [
     label: 'knowledge.assets',
     pointerPath: 'planes.knowledge.assets',
     schemaUrn: 'urn:narrative:assets:1.0.0',
+    required: false,
+    readOnly: false,
+  },
+  {
+    plane: 'knowledge',
+    role: 'storyworld',
+    label: 'knowledge.storyworld',
+    pointerPath: 'planes.knowledge.storyworld',
+    schemaUrn: NARRATIVE_STORYWORLD_SCHEMA_URN,
     required: false,
     readOnly: false,
   },

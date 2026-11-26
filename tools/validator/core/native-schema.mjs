@@ -20,6 +20,7 @@ export const REQUIRED_NARRATIVE_SCHEMA_URNS = Object.freeze([
   'urn:narrative:claims:1.0.0',
   'urn:narrative:evidence:1.0.0',
   'urn:narrative:assets:1.0.0',
+  'urn:narrative:storyworld:1.0.0',
   'urn:narrative:scenes:1.0.0',
   'urn:narrative:scenes:1.1.0',
   'urn:narrative:script:1.0.0',

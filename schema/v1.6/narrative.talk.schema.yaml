@@ -29,7 +29,7 @@ properties:
         required: [ folder, intent ]
 
       knowledge:
-        description: "Locate the terms, claims, and supporting material the narrative uses."
+        description: "Locate terms, claims, supporting material, characters, and story events."
         type: object
         additionalProperties: false
         properties:
@@ -38,6 +38,10 @@ properties:
           claims: { type: string, description: "Path to the file that states the argument's claims." }
           evidence: { type: string, description: "Optional path to the file that records supporting sources." }
           assets: { type: string, description: "Optional path to the file that holds reusable delivery material." }
+          storyworld:
+            type: string
+            description: "Optional path to the file that records characters, their appearances, and story events."
+            examples: [ "knowledge/storyworld.yaml" ]
         required: [ folder, concepts, claims ]
 
       orchestration:
@@ -63,7 +67,7 @@ properties:
           slides:
             type: string
             description: >
-              Optional pointer to read-only legacy slide input. The reader can inspect the file and report read errors. Baseline validation has no bound schema for its contents. Make current slide corrections in authored sources and rebuild the deck.
+              Optional path to a read-only slide file. The reader can inspect the file and report read errors. Baseline validation checks whether the file can be read. Make current slide corrections in authored sources and rebuild the deck.
           variants: { type: string, description: "Path to variants.yaml, one entry per occasion this narrative is delivered on (optional)" }
           scripts:
             type: array
@@ -90,7 +94,7 @@ properties:
 required: [ version, name, planes ]
 
 x-gdsm:
-  version: "1.1.0"
+  version: "1.2.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   plane: null
   design_notes: >

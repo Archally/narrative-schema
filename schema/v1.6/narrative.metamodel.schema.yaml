@@ -114,21 +114,21 @@ $defs:
       $ref: "#/$defs/external_link"
 
 x-gdsm:
-  version: "1.5.1"
+  version: "1.6.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   suite_name: "narrative"
   suite_description: >
-    A narrative model of one argument delivered on several occasions: as a talk or workshop with a deck, or as a film. It separates what the argument says (intent, knowledge) from how it is ordered (orchestration), worded per language and occasion (delivery), checked (assurance) and drawn (presentation).
+    Model one argument or story for delivery as a talk, a workshop with a deck, or a film. Intent and knowledge describe what the narrative conveys. Orchestration orders the scenes. Delivery supplies wording by language and occasion, assurance defines checks, and presentation supplies the visual form.
   design_rationale: >
-    One argument, many deliverables. Scenes, claims and concepts are shared by every deliverable, so an edit reaches every deck and film that uses it. Words live only in the per-language scripts; structure that must survive a change of language (scenes, film lines, on-screen texts, shots) carries identifiers and no words. Time is derived where it can be: a deck scene has a budget in minutes, while a film shot takes its length from its lines, its texts or a design token, and an authored number only raises it. Appearance and limits stay out of the content model.
+    One argument or story can support many deliverables. Scenes, claims, concepts, characters and story events are shared by every deliverable, so an edit reaches every deck and film that uses it. Words live only in the per-language scripts; structure that must survive a change of language (scenes, film lines, on-screen texts, shots) carries identifiers and no words. Time is derived where it can be: a deck scene has a budget in minutes, while a film shot takes its length from its lines, its texts or a design token, and an authored number only raises it. Visual styling belongs to presentation.
   status: review
   planes:
     - id: intent
       description: "Audience, goals, constraints and the north star of the narrative."
       schemas: [ "intent/narrative.intent.schema.yaml" ]
     - id: knowledge
-      description: "Concepts, claims, evidence and assets, including picture assets, their sources and what each picture shows."
-      schemas: [ "knowledge/narrative.concepts.schema.yaml", "knowledge/narrative.claims.schema.yaml", "knowledge/narrative.evidence.schema.yaml", "knowledge/narrative.assets.schema.yaml" ]
+      description: "Concepts, claims, evidence, delivery assets, characters, their appearances, and story events."
+      schemas: [ "knowledge/narrative.concepts.schema.yaml", "knowledge/narrative.claims.schema.yaml", "knowledge/narrative.evidence.schema.yaml", "knowledge/narrative.assets.schema.yaml", "knowledge/narrative.storyworld.schema.yaml" ]
     - id: orchestration
       description: "Scene order, arc and timing; opt-in branching story graphs; a film's lines, on-screen texts and shots."
       schemas: [ "orchestration/narrative.scenes.schema.yaml", "orchestration/narrative.scenes.v1.1.schema.yaml", "orchestration/narrative.film.schema.yaml" ]
@@ -148,7 +148,9 @@ x-gdsm:
     CLM: { schema: "knowledge/narrative.claims.schema.yaml", entity: "Claim", description: "A statement the narrative makes." }
     E: { schema: "knowledge/narrative.evidence.schema.yaml", entity: "Evidence", description: "A source that backs a claim." }
     A: { schema: "knowledge/narrative.assets.schema.yaml", entity: "Asset", description: "A delivery building block, including a picture." }
-    SC: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Scene", description: "One step of the argument." }
+    CHR: { schema: "knowledge/narrative.storyworld.schema.yaml", entity: "Character", description: "A person or personified agent whose presence the story tracks." }
+    EVT: { schema: "knowledge/narrative.storyworld.schema.yaml", entity: "Story event", description: "An occurrence in the story that a scene tells." }
+    SC: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Scene", description: "One step in the telling of an argument or story." }
     SL: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Suggested slide", description: "A slide hint inside a scene." }
     TR: { schema: "orchestration/narrative.scenes.v1.1.schema.yaml", entity: "Transition", description: "An authored choice or default move between two scenes in an opt-in branching story graph." }
     LN: { schema: "orchestration/narrative.film.schema.yaml", entity: "Line", description: "One sentence or one idea of a film, worded per language." }
@@ -162,7 +164,7 @@ x-gdsm:
     AQ: { schema: "assurance/narrative.qa.schema.yaml", entity: "Anticipated question", description: "A question the audience is likely to ask." }
     CHK: { schema: "assurance/narrative.rehearsal.schema.yaml", entity: "Rehearsal check", description: "A rehearsal checklist item." }
     VW: { schema: "assurance/narrative.views.schema.yaml", entity: "View", description: "A view contract." }
-    MU: { schema: null, entity: "Music cue", description: "Reserved prefix; no schema in this release defines it." }
+    MU: { schema: null, entity: "Music cue", description: "Reserved identifier prefix for music cues." }
   non_goals:
     - "A film with a voice: recordings, their alignment to lines, captions and timing by recording"
     - "Final audio mixing is outside this schema. Authors can declare music and sound effect cues (AC###) and silence windows (AW###) in the film."

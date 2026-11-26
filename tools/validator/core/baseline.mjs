@@ -697,6 +697,444 @@ export function collectGraphFindings(pointerMap, findings) {
   });
 }
 
+const STORYWORLD_ENTITY_TYPES = new Set(['character', 'story_event']);
+
+const STORYWORLD_EXPLICIT_REF_RELATIONS = new Set([
+  'appears_in_scene',
+  'occurs_in_scene',
+  'occurs_on_transition',
+  'requires_character',
+  'requires_event',
+  'assumes_concept',
+  'assumption_backed_by_evidence',
+]);
+
+/**
+ * @param {string} pointerLabel
+ * @param {string} yamlPath
+ * @returns {string}
+ */
+function formatTypedRefLocation(pointerLabel, yamlPath) {
+  const normalized = yamlPath.replace(/(\[\d+\])\./g, '.$1.');
+  return `${pointerLabel}.${normalized}`;
+}
+
+/**
+ * Validate storyworld and audience-assumption cross-record invariants.
+ *
+ * @param {ReadonlyMap<string, any>} pointerMap
+ * @param {readonly any[]} entityOccurrences
+ * @param {any[]} findings
+ */
+function collectStoryworldFindings(pointerMap, entityOccurrences, findings) {
+  /** @type {Map<string, Set<string>>} */
+  const kindsById = new Map();
+  /** @type {Map<string, number>} */
+  const countByKindAndId = new Map();
+
+  for (const occ of entityOccurrences) {
+    let kinds = kindsById.get(occ.id);
+    if (!kinds) {
+      kinds = new Set();
+      kindsById.set(occ.id, kinds);
+    }
+    kinds.add(occ.entityType);
+    const key = `${occ.entityType}\u0000${occ.id}`;
+    countByKindAndId.set(key, (countByKindAndId.get(key) ?? 0) + 1);
+  }
+
+  /**
+   * @param {unknown} rawTarget
+   * @param {string} expectedKind
+   * @param {string} file
+   * @param {string} yamlPath
+   * @param {string} pointerLabel
+   * @returns {string | null}
+   */
+  const checkTypedRef = (rawTarget, expectedKind, file, yamlPath, pointerLabel) => {
+    if (typeof rawTarget !== 'string' || rawTarget.length === 0) {
+      return null;
+    }
+    const count = countByKindAndId.get(`${expectedKind}\u0000${rawTarget}`) ?? 0;
+    if (count === 1) {
+      return rawTarget;
+    }
+    const loc = formatTypedRefLocation(pointerLabel, yamlPath);
+    if (count > 1) {
+      findings.push({
+        layer: 'reference',
+        code: 'ambiguous_reference',
+        severity: 'error',
+        file,
+        path: yamlPath,
+        pointerLabel,
+        section: 'cross',
+        message: `Ambiguous reference '${rawTarget}' (${expectedKind}) at ${loc}`,
+      });
+      return null;
+    }
+    const actualKinds = kindsById.get(rawTarget);
+    if (actualKinds && actualKinds.size > 0) {
+      const found = [...actualKinds].sort((a, b) => a.localeCompare(b)).join(', ');
+      findings.push({
+        layer: 'reference',
+        code: 'invalid_reference_kind',
+        severity: 'error',
+        file,
+        path: yamlPath,
+        pointerLabel,
+        section: 'cross',
+        message: `Invalid reference '${rawTarget}' at ${loc}: expected ${expectedKind}, found ${found}`,
+      });
+      return null;
+    }
+    findings.push({
+      layer: 'reference',
+      code: 'missing_reference',
+      severity: 'error',
+      file,
+      path: yamlPath,
+      pointerLabel,
+      section: 'cross',
+      message: `Missing reference '${rawTarget}' (${expectedKind}) at ${loc}`,
+    });
+    return null;
+  };
+
+  const intentDoc = getDoc(pointerMap, 'intent');
+  const audience = isRecord(intentDoc?.audience) ? intentDoc.audience : undefined;
+  const assumedConcepts = Array.isArray(audience?.assumed_concepts)
+    ? audience.assumed_concepts
+    : [];
+  if (assumedConcepts.length > 0) {
+    const intentFile = getFile(pointerMap, 'intent');
+    /** @type {Set<string>} */
+    const seenAssumed = new Set();
+    assumedConcepts.forEach((rawAssumption, idx) => {
+      if (!isRecord(rawAssumption)) {
+        return;
+      }
+      const basePath = `audience.assumed_concepts[${idx}]`;
+      const rawConcept = rawAssumption.concept;
+      checkTypedRef(rawConcept, 'concept', intentFile, `${basePath}.concept`, 'intent');
+      if (typeof rawConcept === 'string' && rawConcept.length > 0) {
+        if (seenAssumed.has(rawConcept)) {
+          findings.push({
+            layer: 'storyworld',
+            code: 'intent_duplicate_assumed_concept',
+            severity: 'error',
+            file: intentFile,
+            path: `${basePath}.concept`,
+            pointerLabel: 'intent',
+            section: 'cross',
+            message: `Audience assumed_concepts names concept '${rawConcept}' more than once`,
+          });
+        } else {
+          seenAssumed.add(rawConcept);
+        }
+      }
+      const rawEvidence = Array.isArray(rawAssumption.evidence) ? rawAssumption.evidence : [];
+      rawEvidence.forEach((evRef, evIdx) => {
+        checkTypedRef(evRef, 'evidence', intentFile, `${basePath}.evidence[${evIdx}]`, 'intent');
+      });
+    });
+  }
+
+  const storyworldDoc = getDoc(pointerMap, 'knowledge.storyworld');
+  if (!storyworldDoc) {
+    return;
+  }
+
+  const swFile = getFile(pointerMap, 'knowledge.storyworld');
+  /**
+   * @param {string} code
+   * @param {string} yamlPath
+   * @param {string} message
+   */
+  const pushSwError = (code, yamlPath, message) => {
+    findings.push({
+      layer: 'storyworld',
+      code,
+      severity: 'error',
+      file: swFile,
+      path: yamlPath,
+      pointerLabel: 'knowledge.storyworld',
+      section: 'cross',
+      message: `Storyworld: ${message}`,
+    });
+  };
+
+  const scenesDoc = getDoc(pointerMap, 'orchestration.scenes');
+  const hasGraph = Boolean(scenesDoc && hasOwn(scenesDoc, 'graph'));
+  const rawGraph = hasGraph && isRecord(scenesDoc?.graph) ? scenesDoc.graph : null;
+  const declaredStateKeys = new Set(
+    rawGraph && isRecord(rawGraph.state) ? Object.keys(rawGraph.state) : [],
+  );
+
+  /** @type {Map<string, number>} */
+  const transitionCounts = new Map();
+  /** @type {Map<string, Record<string, unknown>>} */
+  const transitionCandidates = new Map();
+  const rawTransitions = Array.isArray(rawGraph?.transitions) ? rawGraph.transitions : [];
+  for (const rawTr of rawTransitions) {
+    if (!isRecord(rawTr) || typeof rawTr.id !== 'string' || rawTr.id.length === 0) {
+      continue;
+    }
+    const trId = rawTr.id;
+    transitionCounts.set(trId, (transitionCounts.get(trId) ?? 0) + 1);
+    transitionCandidates.set(trId, rawTr);
+  }
+  /** @type {Map<string, Record<string, unknown>>} */
+  const transitionsById = new Map();
+  for (const [trId, tr] of transitionCandidates.entries()) {
+    if (transitionCounts.get(trId) === 1) {
+      transitionsById.set(trId, tr);
+    }
+  }
+
+  /** @type {Set<string>} */
+  const seenCharacterIds = new Set();
+  const rawCharacters = Array.isArray(storyworldDoc.characters) ? storyworldDoc.characters : [];
+  rawCharacters.forEach((rawChar, cIdx) => {
+    if (!isRecord(rawChar)) {
+      return;
+    }
+    const charId = rawChar.id;
+    const charLabel = typeof charId === 'string' && charId.length > 0 ? charId : '?';
+    if (typeof charId === 'string' && charId.length > 0) {
+      if (seenCharacterIds.has(charId)) {
+        pushSwError(
+          'storyworld_duplicate_character_id',
+          `characters[${cIdx}].id`,
+          `duplicate character ID '${charId}'`,
+        );
+      } else {
+        seenCharacterIds.add(charId);
+      }
+    }
+
+    /** @type {Set<string>} */
+    const seenScenes = new Set();
+    const rawAppearances = Array.isArray(rawChar.appearances) ? rawChar.appearances : [];
+    rawAppearances.forEach((rawApp, aIdx) => {
+      if (!isRecord(rawApp)) {
+        return;
+      }
+      const scenePath = `characters[${cIdx}].appearances[${aIdx}].scene`;
+      const sceneRef = rawApp.scene;
+      checkTypedRef(sceneRef, 'scene', swFile, scenePath, 'knowledge.storyworld');
+      if (typeof sceneRef === 'string' && sceneRef.length > 0) {
+        if (seenScenes.has(sceneRef)) {
+          pushSwError(
+            'storyworld_duplicate_appearance_scene',
+            scenePath,
+            `character '${charLabel}' declares scene '${sceneRef}' more than once in appearances`,
+          );
+        } else {
+          seenScenes.add(sceneRef);
+        }
+      }
+    });
+  });
+
+  /** @type {Set<string>} */
+  const seenEventIds = new Set();
+  /** @type {Map<string, { reqs: string[], index: number }>} */
+  const eventDeps = new Map();
+  const rawEvents = Array.isArray(storyworldDoc.story_events) ? storyworldDoc.story_events : [];
+  rawEvents.forEach((rawEvent, eIdx) => {
+    if (!isRecord(rawEvent)) {
+      return;
+    }
+    const eventId = rawEvent.id;
+    const eventLabel = typeof eventId === 'string' && eventId.length > 0 ? eventId : '?';
+    if (typeof eventId === 'string' && eventId.length > 0) {
+      if (seenEventIds.has(eventId)) {
+        pushSwError(
+          'storyworld_duplicate_event_id',
+          `story_events[${eIdx}].id`,
+          `duplicate story event ID '${eventId}'`,
+        );
+      } else {
+        seenEventIds.add(eventId);
+      }
+    }
+
+    checkTypedRef(
+      rawEvent.occurs_in,
+      'scene',
+      swFile,
+      `story_events[${eIdx}].occurs_in`,
+      'knowledge.storyworld',
+    );
+
+    const rawReqChars = Array.isArray(rawEvent.required_characters)
+      ? rawEvent.required_characters
+      : [];
+    rawReqChars.forEach((chrRef, rIdx) => {
+      checkTypedRef(
+        chrRef,
+        'character',
+        swFile,
+        `story_events[${eIdx}].required_characters[${rIdx}]`,
+        'knowledge.storyworld',
+      );
+    });
+
+    /** @type {string[]} */
+    const resolvedReqEvents = [];
+    const rawReqEvents = Array.isArray(rawEvent.requires_events) ? rawEvent.requires_events : [];
+    rawReqEvents.forEach((reqRef, rIdx) => {
+      const resolved = checkTypedRef(
+        reqRef,
+        'story_event',
+        swFile,
+        `story_events[${eIdx}].requires_events[${rIdx}]`,
+        'knowledge.storyworld',
+      );
+      if (resolved !== null) {
+        resolvedReqEvents.push(resolved);
+      }
+    });
+    if (typeof eventId === 'string' && eventId.length > 0 && !eventDeps.has(eventId)) {
+      eventDeps.set(eventId, { reqs: resolvedReqEvents, index: eIdx });
+    }
+
+    const hasOnTransitions =
+      hasOwn(rawEvent, 'on_transitions') && rawEvent.on_transitions !== undefined;
+    const hasRecordedBy = hasOwn(rawEvent, 'recorded_by') && rawEvent.recorded_by !== undefined;
+
+    if (hasOnTransitions && !hasGraph) {
+      pushSwError(
+        'storyworld_on_transitions_requires_graph',
+        `story_events[${eIdx}].on_transitions`,
+        `event '${eventLabel}' declares on_transitions without orchestration.scenes.graph`,
+      );
+    }
+    if (hasRecordedBy && !hasGraph) {
+      pushSwError(
+        'storyworld_recorded_by_requires_graph',
+        `story_events[${eIdx}].recorded_by`,
+        `event '${eventLabel}' declares recorded_by without orchestration.scenes.graph`,
+      );
+    }
+
+    if (!hasGraph) {
+      return;
+    }
+
+    /** @type {Array<{ id: string, tr: Record<string, unknown> }>} */
+    const resolvedTransitions = [];
+    if (hasOnTransitions) {
+      const rawOnTransitions = Array.isArray(rawEvent.on_transitions)
+        ? rawEvent.on_transitions
+        : [];
+      const rawOccursIn =
+        typeof rawEvent.occurs_in === 'string' && rawEvent.occurs_in.length > 0
+          ? rawEvent.occurs_in
+          : null;
+      rawOnTransitions.forEach((trRef, tIdx) => {
+        const trPath = `story_events[${eIdx}].on_transitions[${tIdx}]`;
+        const resolvedTrId = checkTypedRef(trRef, 'transition', swFile, trPath, 'knowledge.storyworld');
+        if (resolvedTrId === null) {
+          return;
+        }
+        const tr = transitionsById.get(resolvedTrId);
+        if (!tr) {
+          return;
+        }
+        resolvedTransitions.push({ id: resolvedTrId, tr });
+        if (rawOccursIn !== null && tr.from !== rawOccursIn && tr.to !== rawOccursIn) {
+          pushSwError(
+            'storyworld_detached_transition',
+            trPath,
+            `event '${eventLabel}' (occurs_in '${rawOccursIn}') lists transition '${resolvedTrId}' (${String(tr.from ?? '?')} -> ${String(tr.to ?? '?')}), which neither enters nor leaves '${rawOccursIn}'`,
+          );
+        }
+      });
+    }
+
+    if (hasRecordedBy) {
+      const rawRecordedBy = Array.isArray(rawEvent.recorded_by) ? rawEvent.recorded_by : [];
+      rawRecordedBy.forEach((stateKey, kIdx) => {
+        if (typeof stateKey !== 'string' || stateKey.length === 0) {
+          return;
+        }
+        const keyPath = `story_events[${eIdx}].recorded_by[${kIdx}]`;
+        if (!declaredStateKeys.has(stateKey)) {
+          pushSwError(
+            'storyworld_unknown_state_key',
+            keyPath,
+            `event '${eventLabel}' recorded_by references undeclared graph state key '${stateKey}'`,
+          );
+          return;
+        }
+        if (hasOnTransitions && resolvedTransitions.length > 0) {
+          for (const { id: trId, tr } of resolvedTransitions) {
+            const effects = isRecord(tr.effects) ? tr.effects : null;
+            if (!effects || !hasOwn(effects, stateKey)) {
+              pushSwError(
+                'storyworld_incomplete_effects',
+                keyPath,
+                `event '${eventLabel}' lists transition '${trId}' whose effects do not assign recorded_by key '${stateKey}'`,
+              );
+            }
+          }
+        }
+      });
+    }
+  });
+
+  /** @type {Map<string, 0 | 1 | 2>} */
+  const color = new Map();
+  /** @type {string[]} */
+  const stack = [];
+  /** @type {Set<string>} */
+  const reportedCycles = new Set();
+
+  /** @param {string} eventId */
+  const dfs = (eventId) => {
+    color.set(eventId, 1);
+    stack.push(eventId);
+    const entry = eventDeps.get(eventId);
+    const reqs = entry?.reqs ?? [];
+    for (const nextId of reqs) {
+      const nextColor = color.get(nextId) ?? 0;
+      if (nextColor === 1) {
+        const cycleStart = stack.indexOf(nextId);
+        const cycleNodes = stack.slice(cycleStart);
+        let minIdx = 0;
+        for (let i = 1; i < cycleNodes.length; i += 1) {
+          if (cycleNodes[i].localeCompare(cycleNodes[minIdx]) < 0) {
+            minIdx = i;
+          }
+        }
+        const canonical = [...cycleNodes.slice(minIdx), ...cycleNodes.slice(0, minIdx)].join('->');
+        if (!reportedCycles.has(canonical)) {
+          reportedCycles.add(canonical);
+          const cycleDisplay = [...cycleNodes, nextId].join(' -> ');
+          const targetIdx = eventDeps.get(nextId)?.index ?? 0;
+          pushSwError(
+            'storyworld_event_dependency_cycle',
+            `story_events[${targetIdx}].requires_events`,
+            `cyclic requires_events dependency detected (${cycleDisplay})`,
+          );
+        }
+      } else if (nextColor === 0 && eventDeps.has(nextId)) {
+        dfs(nextId);
+      }
+    }
+    stack.pop();
+    color.set(eventId, 2);
+  };
+
+  for (const eventId of eventDeps.keys()) {
+    if ((color.get(eventId) ?? 0) === 0) {
+      dfs(eventId);
+    }
+  }
+}
+
 /**
  * @param {ReadonlyMap<string, any>} pointerMap
  * @param {any[]} findings
@@ -1584,6 +2022,23 @@ function collectLinkFindings(pointerMap, findings) {
     });
   }
 
+  const storyworldDoc = getDoc(pointerMap, 'knowledge.storyworld');
+  if (storyworldDoc && Array.isArray(storyworldDoc.characters)) {
+    const file = getFile(pointerMap, 'knowledge.storyworld');
+    storyworldDoc.characters.forEach((character, index) => {
+      if (isRecord(character)) {
+        owners.push({
+          kind: 'character',
+          entity: character,
+          field: 'external_characters',
+          file,
+          pointerLabel: 'knowledge.storyworld',
+          basePath: `characters[${index}]`,
+        });
+      }
+    });
+  }
+
   for (const { kind, entity, field, file, pointerLabel, basePath } of owners) {
     const links = entity[field];
     if (!Array.isArray(links)) {
@@ -1833,6 +2288,9 @@ function validateLoadedNarrative(source, registry, schemaBackedPointers, mode) {
     if (!ID_RE.test(duplicate.id)) {
       continue;
     }
+    if (duplicate.occurrences.every((occ) => STORYWORLD_ENTITY_TYPES.has(occ.entityType))) {
+      continue;
+    }
     const first = duplicate.occurrences[0];
     const locs = duplicate.occurrences.map(formatOccurrenceLocation);
     otherFindings.push({
@@ -1849,6 +2307,9 @@ function validateLoadedNarrative(source, registry, schemaBackedPointers, mode) {
 
   for (const ref of occurrences.unresolvedReferences) {
     if (!ID_RE.test(ref.targetId)) {
+      continue;
+    }
+    if (STORYWORLD_EXPLICIT_REF_RELATIONS.has(ref.relationType)) {
       continue;
     }
     if (!isCheckedRefField(ref.field)) {
@@ -1871,6 +2332,7 @@ function validateLoadedNarrative(source, registry, schemaBackedPointers, mode) {
   const scenesPointer = pointerMap.get('orchestration.scenes');
   collectStructureFindings(pointerMap, registry.getScenesSchema(scenesPointer?.schemaUrn), otherFindings);
   collectGraphFindings(pointerMap, otherFindings);
+  collectStoryworldFindings(pointerMap, occurrences.entityOccurrences, otherFindings);
   collectVariantFindings(pointerMap, otherFindings);
   collectFilmFindings(pointerMap, schemaBackedPointers, otherFindings);
   collectPictureFindings(pointerMap, otherFindings);

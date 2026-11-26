@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.0]
+
+- Model characters and record how each character is present in a scene.
+- Record story events in their scenes. In a branching story, name the transitions that tell an event and the state keys those transitions assign.
+- Declare which concepts the audience is assumed to know in the narrative intent.
+
 ## [1.5.1]
 
 - The Narrative agent kit helps you model a talk or deck in Claude Code, Codex, and Cursor.
