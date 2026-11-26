@@ -1,0 +1,7 @@
+version: "1.0.0"
+evidence:
+  - id: E001
+    title: Entry workshop syllabus
+    kind: internal
+    citation: The fictional harbour's entry workshop covers lens optics and demonstrates restoring the beam with a spare lens.
+    backs_claims: [CLM001]

@@ -1,0 +1,24 @@
+version: "1.0.0"
+narrative_arc: journey
+scenes:
+  - id: SC001
+    title: Harbour at dawn
+    role: hook
+    timebox: { target: 1 }
+    supports_goals: [G001]
+    covers: {}
+  - id: SC002
+    title: The storm warning
+    role: setup
+    timebox: { target: 1 }
+    covers: { concepts: [C002] }
+  - id: SC003
+    title: Tomas brings the lens
+    role: turn
+    timebox: { target: 1 }
+    covers: {}
+  - id: SC004
+    title: The lamp is relit
+    role: payoff
+    timebox: { target: 1 }
+    covers: { concepts: [C003], claims: [CLM001] }

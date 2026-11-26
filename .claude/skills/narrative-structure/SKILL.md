@@ -5,7 +5,7 @@ description: Plan audience goals, a throughline, scenes, claims, evidence, and a
 
 # Narrative Structure
 
-Start with `examples/public-deck` in the Narrative Schema checkout. Open its `narrative.yaml` to see how it points to the model files. Use `schema/v1.6/` to check field shapes. Create or revise the model in the author's chosen directory and keep the example as a reference.
+Start with `examples/public-deck` in the Narrative Schema checkout. Open its `narrative.yaml` to see how it points to the model files. Use the version folder under `schema/` to check field shapes. Create or revise the model in the author's chosen directory and keep the example as a reference.
 
 ## Start with the audience
 

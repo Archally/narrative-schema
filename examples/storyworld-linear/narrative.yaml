@@ -1,0 +1,14 @@
+version: "1.0.0"
+id: N001
+name: Lighthouse Ladder
+planes:
+  intent: { folder: intent, intent: intent/intent.yaml }
+  knowledge:
+    folder: knowledge
+    concepts: knowledge/concepts.yaml
+    claims: knowledge/claims.yaml
+    evidence: knowledge/evidence.yaml
+    storyworld: knowledge/storyworld.yaml
+  orchestration: { folder: orchestration, scenes: orchestration/scenes.yaml }
+  delivery: { folder: delivery, variants: delivery/variants.yaml }
+  assurance: { folder: assurance }

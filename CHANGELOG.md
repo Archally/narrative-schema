@@ -5,6 +5,7 @@
 - Model characters and record how each character is present in a scene.
 - Record story events in their scenes. In a branching story, name the transitions that tell an event and the state keys those transitions assign.
 - Declare which concepts the audience is assumed to know in the narrative intent.
+- Explore Lighthouse Ladder, a four-scene example with two characters and two story events.
 
 ## [1.5.1]
 

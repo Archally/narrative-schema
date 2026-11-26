@@ -1,0 +1,8 @@
+version: "1.0.0"
+claims:
+  - id: CLM001
+    title: A spare lens restores the beam
+    strength: strong
+    supports_goals: [G001]
+    key_terms: [C003]
+    evidence_refs: [E001]

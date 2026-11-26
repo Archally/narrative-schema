@@ -1,0 +1,14 @@
+version: "1.0.0"
+concepts:
+  - id: C001
+    term: Lens optics
+    definition: How a lens bends and focuses light.
+  - id: C002
+    term: Fresnel alignment
+    definition: How to centre a Fresnel lens on the lamp.
+    prerequisites: [C001]
+    taught_in_scenes: [SC002]
+  - id: C003
+    term: Emergency relight
+    definition: Restoring the lighthouse beam during a storm.
+    prerequisites: [C002]

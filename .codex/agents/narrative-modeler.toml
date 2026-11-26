@@ -1,4 +1,4 @@
-# Registers the role defined in .agents/agents/narrative-modeler.md (sha256 911b887f251c901b3e31020fed9253e231641476019a09c5f94b6111f9ffd83e of that file as shipped).
+# Registers the role defined in .agents/agents/narrative-modeler.md (sha256 3f533def2e241082ce3d817e2dc68dde2062c5e1e17e2bb2d02dd8aa5b853b6c of that file as shipped).
 name = "narrative-modeler"
 description = "Helps authors plan, write, and revise Narrative YAML for a talk or deck. Use for audience goals, throughlines, claims, evidence, scene order, or a first script."
 developer_instructions = "Read `.agents/agents/narrative-modeler.md` completely before you start and follow it as your role prompt.\nIt is the canonical method; this file only registers the role. If that file is missing, say so\nand stop instead of improvising the role."

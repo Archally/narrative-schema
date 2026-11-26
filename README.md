@@ -16,7 +16,9 @@ npm run next-id -- /tmp/public-deck.model.json CLM
 npm run check:semantic:example
 ```
 
-Explore the [worked example](examples/README.md) and the [format and tools](docs/README.md).
+Explore the [worked examples](examples/README.md) and the [format and tools](docs/README.md).
+
+[Lighthouse Ladder](examples/storyworld-linear/narrative.yaml) is a four-scene example with two characters and two story events.
 
 ## Use it with your agent
 

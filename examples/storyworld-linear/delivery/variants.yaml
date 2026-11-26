@@ -1,0 +1,8 @@
+version: "1.0.0"
+variants:
+  - id: DLV001
+    name: Canonical cut
+    language: en-US
+    confidentiality: public
+    duration_minutes: 4
+    scene_selection: { scene_ids: [SC001, SC002, SC003, SC004] }

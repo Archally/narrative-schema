@@ -1,0 +1,27 @@
+version: "1.0.0"
+characters:
+  - id: CHR001
+    name: Mara
+    summary: The lighthouse keeper.
+    appearances:
+      - { scene: SC001, presence: on_screen }
+      - { scene: SC002, presence: on_screen }
+      - { scene: SC004, presence: on_screen }
+  - id: CHR002
+    name: Tomas
+    summary: The harbour mechanic with the spare lens.
+    appearances:
+      - { scene: SC001, presence: mentioned, note: Mara says only Tomas has a spare lens. }
+      - { scene: SC002, presence: heard, note: His voice on the radio. }
+      - { scene: SC003, presence: on_screen }
+      - { scene: SC004, presence: on_screen }
+story_events:
+  - id: EVT001
+    title: The lamp's lens cracks
+    occurs_in: SC002
+    required_characters: [CHR001]
+  - id: EVT002
+    title: The lamp is relit with the spare lens
+    occurs_in: SC004
+    required_characters: [CHR001, CHR002]
+    requires_events: [EVT001]

@@ -1,0 +1,16 @@
+version: "1.0.0"
+topic_statement: Keep the lighthouse beam lit through the storm.
+audience:
+  level: intermediate
+  roles: [engineer]
+  assumed_concepts:
+    - concept: C001
+      basis: Entry workshop covers lens optics
+      evidence: [E001]
+goals:
+  - id: G001
+    statement: Explain how the lighthouse beam is restored.
+    priority: must
+constraints: { duration_minutes: 4, language: en-US, format: lecture }
+north_star:
+  statement: The audience can explain how the spare lens restores the beam.
