@@ -1,12 +1,25 @@
 Archally Narrative Schema Tools
 ===============================
 
+The tools in this directory are not all under the same licence. The
+repository-root LICENSE is the authoritative map.
+
 Apache License, Version 2.0 (see ../LICENSE-APACHE)
 
-  validator/   standalone conformance validator
-  port/        release and integrity tools
-  README.md    tool documentation
-  LICENSE      this licence map
+  validator/         standalone conformance validator
+  port/              release and integrity tools
+  README.md          tool documentation
+  LICENSE            this licence map
 
-An FSL tool must be expressly designated in ../LICENSE. This release contains
-no FSL-licensed tools. See ../NOTICE for npm dependency notices.
+Functional Source License 1.1, Apache 2.0 future licence (see ../LICENSE-FSL)
+
+  model-builder/     builds a model's graph from its YAML files
+  next-id/           suggests the next free identifier in a model
+  semantic-checker/  model-quality rules and the adapter that feeds them
+
+  Free for any Permitted Purpose (internal use, non-commercial education and
+  research, and professional services you provide to others). Not for a
+  Competing Use. Each version converts to Apache-2.0 two years after release.
+
+  The rule engine is not in this directory: it is the separate Apache-2.0
+  package @archally/semantic-checker. See ../NOTICE for npm dependency notices.

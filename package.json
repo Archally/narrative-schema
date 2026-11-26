@@ -1,6 +1,6 @@
 {
   "name": "@archally/narrative-schema",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "YAML format and conformance tools for narrative models",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Adam Walkowski",
@@ -32,11 +32,16 @@
   "scripts": {
     "validate": "node tools/validator/cli.mjs --schemas schema/v1.5",
     "validate:example": "npm run validate -- --model examples/public-deck",
+    "build:model": "node tools/model-builder/cli.mjs",
+    "next-id": "node tools/next-id/cli.mjs",
+    "check:semantic": "node tools/semantic-checker/cli.mjs",
+    "check:semantic:example": "npm run check:semantic -- examples/public-deck --strict",
     "port:verify": "node tools/port/verify-ported.mjs",
-    "release:check": "node tools/port/release-check.mjs --expect 1.5.0",
-    "test": "node --test tools/port/*.test.mjs"
+    "release:check": "node tools/port/release-check.mjs --expect 1.5.1",
+    "test": "node --test tools/port/*.test.mjs tools/validator/*.test.mjs tools/model-builder/*.test.mjs tools/next-id/*.test.mjs tools/semantic-checker/*.test.mjs"
   },
   "dependencies": {
+    "@archally/semantic-checker": "git+https://github.com/archally/semantic-checker.git#v0.1.1",
     "ajv": "8.20.0",
     "yaml": "2.9.0"
   }

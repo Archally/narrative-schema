@@ -1,0 +1,62 @@
+engineVersion: "0.1"
+rules:
+  - id: orphan-concepts
+    severity: warn
+    description: Authored concepts that have no resolved relations to any claim, scene, asset, evidence, question, or other concept.
+    find:
+      entity_type: concept
+    check:
+      has_relation:
+        direction: any
+        exists: true
+    message: "Concept {id} ({name|'unnamed'}) has no resolved relations in the authored narrative graph."
+
+  - id: orphan-assets
+    severity: warn
+    description: Authored assets that are not linked to any scene, claim, concept, goal, shot, slide, or variant.
+    find:
+      entity_type: asset
+    check:
+      has_relation:
+        direction: any
+        exists: true
+    message: "Asset {id} ({name|'unnamed'}) has no resolved relations in the authored narrative graph."
+
+  - id: orphan-evidence
+    severity: warn
+    description: Authored evidence records that are not linked to any claim, concept, scene, or slide.
+    find:
+      entity_type: evidence
+    check:
+      has_relation:
+        direction: any
+        exists: true
+    message: "Evidence {id} ({name|'unnamed'}) has no resolved relations in the authored narrative graph."
+
+  - id: unlinked-qa
+    severity: warn
+    description: Anticipated Q&A entries with no resolved link to or from any scene, goal, concept, claim, evidence, asset, or slide.
+    find:
+      entity_type: question
+    check:
+      has_relation:
+        direction: any
+        exists: true
+    message: "Question {id} ({name|'unnamed'}) is not linked to or from any authored narrative entity."
+
+  - id: scene-without-goal-or-claim
+    severity: warn
+    description: Authored scenes that neither support/cover a goal nor cover a claim (checked from both scene and claim sides).
+    find:
+      entity_type: scene
+    check:
+      any_of:
+        - has_relation:
+            direction: out
+            type: [supports_goal, covers_goal, covers_claim]
+            exists: true
+        - has_relation:
+            direction: in
+            type: [covered_in_scene]
+            exists: true
+    message: "Scene {id} ({name|'unnamed'}) does not support or cover any goal or claim."

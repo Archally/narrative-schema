@@ -1,0 +1,31 @@
+engineVersion: "0.1"
+rules:
+  - id: unused-scene-in-variants
+    severity: warn
+    description: Authored scenes not selected by any variant when at least one variant declares explicit scene_selection.scene_ids.
+    find:
+      entity_type: scene
+    check:
+      custom:
+        module: ./unused-scene-in-variants.mjs
+    message: "Scene {id} ({name|'unnamed'}) is not included in any variant's explicit scene_selection.scene_ids."
+
+  - id: asset-substitution-target-type
+    severity: warn
+    description: Variant asset_substitutions replace_ref and with_ref targets must resolve to Narrative asset entities (missing IDs are left to baseline validation).
+    find:
+      entity_type: __narrative_asset_substitution_ref
+    check:
+      custom:
+        module: ./asset-substitution-target-type.mjs
+    message: "Variant substitution target must resolve to an asset."
+
+  - id: timebox-ordering
+    severity: warn
+    description: Authored scene timebox bounds must satisfy min <= target <= max whenever optional min or max is specified.
+    find:
+      entity_type: __narrative_timebox_check
+    check:
+      custom:
+        module: ./timebox-ordering.mjs
+    message: "Scene timebox bounds must satisfy min <= target <= max."

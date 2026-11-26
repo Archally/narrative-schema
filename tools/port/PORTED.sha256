@@ -2,9 +2,18 @@
 # SHA-256 over LF-normalized UTF-8 content.
 # job schema schema/v1.5
 # job validator tools/validator
+# job model-builder tools/model-builder
+# job next-id tools/next-id
+# job semantic-checker tools/semantic-checker
 # job port tools/port
 # job example-public-deck examples/public-deck
 # job example-walkthrough examples/walkthrough
+# job agent-kit-shared .agents
+# job agent-kit-claude .claude
+# job agent-kit-codex .codex
+# job agent-kit-cursor .cursor
+# file agent-kit-agents-md AGENTS.md
+# file agent-kit-claude-md CLAUDE.md
 # job docs docs
 # file examples-readme examples/README.md
 # file package package.json
@@ -35,7 +44,6 @@
 # absent tools/narrative-generator
 # absent tools/ffactory
 # absent tools/flow-graph
-# absent tools/semantic-checker
 # absent kit/skills
 # absent kit/agents
 # absent examples/branching-minimal
@@ -46,9 +54,20 @@
 # covered docs
 # covered examples
 
-68471c25b0aac9c0782d3207021b50c73edd6d070b842800bd0eecfc0cb871e7  changelog/CHANGELOG.md
-12392cd734cffcdb0e1bf667c0dd888bed2ffc3b7a3bb44794e56f28a7b77384  ci-validate/validate.yml
-f094ba4849e082994aa50328ccbf5d60b55131a2b9afdeb199b93c1ff33798c1  contributing/CONTRIBUTING.md
+3fac51a618eff506919b18479cd4ebad956f1fab48c39fa0840c80d3689a949a  agent-kit-agents-md/AGENTS.md
+55f4662f31958b09405ab9426eb31261a6aa330c072ea9d0124ee59245b8b7cf  agent-kit-claude-md/CLAUDE.md
+911b887f251c901b3e31020fed9253e231641476019a09c5f94b6111f9ffd83e  agent-kit-claude/agents/narrative-modeler.md
+4509ab86f8ad8eeabb29e353349a9665a312f3a0e7fd5034a0171e0ef5a6eb84  agent-kit-claude/commands/narrative-check.md
+3be32f574164e18061019a5b97aa325099496c1eaa842b8d5a04caa59e7290fc  agent-kit-claude/skills/narrative-structure/SKILL.md
+bc2b79fb1955ac97efc9794f74df57b266525410c840aa5a6f9283b361704932  agent-kit-codex/agents/narrative-modeler.toml
+3d8b1553df39d584de4dbab24caea2c99322b3f14e2ac68addfe9a0dab5d0d04  agent-kit-cursor/agents/narrative-modeler.md
+a19219b3537c0683e64b48774ba2e5d79ff301831243505a1022e0fbbd65d2f8  agent-kit-cursor/commands/narrative-check.md
+911b887f251c901b3e31020fed9253e231641476019a09c5f94b6111f9ffd83e  agent-kit-shared/agents/narrative-modeler.md
+4509ab86f8ad8eeabb29e353349a9665a312f3a0e7fd5034a0171e0ef5a6eb84  agent-kit-shared/commands/narrative-check.md
+3be32f574164e18061019a5b97aa325099496c1eaa842b8d5a04caa59e7290fc  agent-kit-shared/skills/narrative-structure/SKILL.md
+9d123ded433d34fb74002aeb7029d64615dd9e0077804b3973557b2aca065a7d  changelog/CHANGELOG.md
+7dc7540b39d78e3decb4ef6d773439f93c0a617c79a97aeebb748766543d601a  ci-validate/validate.yml
+7e53d7e6d233360db3c6dd83ef2e165e3348a0c8234fdad340facdb8cd622bff  contributing/CONTRIBUTING.md
 350463ef09688ee22741731eba9dc980a824c926c6f7f574799075297619c985  docs/README.md
 aa16cb3b516dd94d05edc66995492de75b8f3887a5b5914c4fe9ceb2cad82311  example-public-deck/delivery/script.en-US.yaml
 fb359b9519ef852eb4056ac3dda79968ca87ba170575af3ce2dda59809f7d2b3  example-public-deck/delivery/variants.yaml
@@ -64,9 +83,17 @@ fb359b9519ef852eb4056ac3dda79968ca87ba170575af3ce2dda59809f7d2b3  example-public
 027a5c04230fce7a3df3538ba03e1394edcfa3e2b74841989cf6eb76080c4015  examples-readme/README.md
 1af166ac49869b9ac380095c8a7aac1989558cbb4d2674f3559b11f0093120a6  ignore/.gitignore
 d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c  line-endings/.gitattributes
-716fad8870dfe543f16ae0a10df0a3c13de695eb9ee535adf910c9321d10fd7b  lockfile/package-lock.json
-5b3322c644aabb1d8b7013b87f7040f8ee5218295b661583195f282f1757cadd  notice/NOTICE
-b7a86e49109809ade21a150890cba8911d1ecad0e9187e41f1d707e233054dc6  package/package.json
+60514f82301ab1f609a70948f50713e6ca54d8cb9cb76d7c09e5525247ea8f19  lockfile/package-lock.json
+9257c14f466476b1ec5f82caa9a1263c1d950aa3bf945e5822df43fa83bab51e  model-builder/cli.mjs
+0be118c8bee806113f9b24282531f15eca02ee04a84c6e743d3e69f27cb32838  model-builder/index.mjs
+31edf5f215f60152fb4fe673117b41f53c50b4ffeb08a9da9d479f0c8c030e79  model-builder/model-builder.test.mjs
+0a516561007b86e150eae0b1209af2ff1623226111e9694ca9ba937ecbe56a56  model-builder/README.md
+173b6eecb6e17001e0546617a22ab5dd903dbe0c26dda91c7322c504a43c88d2  next-id/cli.mjs
+99d8f4df70b9b4897e1cfd42199b0c5b027e81f6d835cade81cfd4e57ea5d15e  next-id/index.mjs
+a6108ebb195a55d46fa1cbc90a7a81e5bea6c82e388f4fcefe699475820418d6  next-id/next-id.test.mjs
+137e63f7f8dc98914071fb437ac53a4f4c16b9535d161c0f32858e93c43bfcc5  next-id/README.md
+e34df188e7ff69c2da242134079ac095a1b62638a9ee25a34a7954c5259a27dd  notice/NOTICE
+a08a2c8c2644e349dbf9b01323392e264713ada3bafa48123458cc2e3a674881  package/package.json
 a463bf61630ce41a2cf4452c54a9f88c4cfc7b451e62703929e3e8a5697a64b8  port/integrity.mjs
 107816324f75dc8a262fb46ae7fa6f65e86038e3540c28ecfdd57808e5198433  port/project-schema.mjs
 b07dd0e843398dd4a597ed15bc689c814fa72a0c1faf64ac462c85a1a3129672  port/project-schema.test.mjs
@@ -74,7 +101,7 @@ dd78de5c521300349e26c44ad840ee778a7191a97ebcf09afd6b4fe506aea293  port/release-c
 eacdf638626e8aa5a86093c9ff660ac06d713de6018f0a71deb62a746db05074  port/release-check.test.mjs
 d1ed4b7ad6455db83905f7d92968ff2fbf15016a3d3754f9b64ca076a239dca4  port/verify-ported.mjs
 07c81a0e39ea634e9deda17fe104380e84f239990c8623daf9f4f96e899e14db  port/verify-ported.test.mjs
-2ba2877b3013b5f7ab81419b4f4fa897422a379edfa1897ea192dd7be25e9a79  readme/README.md
+7073f3e8a16bed5ffb2ad57b4bf7967b2822c68e918440e55a352e54d98eee83  readme/README.md
 ee489df24f94705515eeef2e75b12272a3a7f827193d0802ba51574262b90f64  schema/assurance/narrative.qa.schema.yaml
 5ecc8930c7cd802481a87e81bae32035f5f12afea5bd00cc78e021294536250b  schema/assurance/narrative.rehearsal.schema.yaml
 0efd190e60da6cf01b4d9c6489afa747fcf34124cc4c2a859fa3a7e881484f71  schema/assurance/narrative.views.schema.yaml
@@ -85,7 +112,7 @@ cfd635ed2b0836cca97a4ab539ce423794daf83ef4eefeaca69726041fce6e21  schema/intent/
 13f8f22b3a94d425439da61dd7b59c56bf0f131f4c7f7fa6f472261d350bae35  schema/knowledge/narrative.claims.schema.yaml
 6428c0887412a2c8885971f86796682fde82403c0ab497bc4221232592af0a87  schema/knowledge/narrative.concepts.schema.yaml
 2f9f405996db1e85c47b1a05a13dded713d26b1d2b5bd6a04de82e6546ad7c0a  schema/knowledge/narrative.evidence.schema.yaml
-d0df0950eae3577d0342872dcb24ccde05d46490d79869870bb92005a1c7aefa  schema/narrative.metamodel.schema.yaml
+d011bf5bdf9e06b07d51c5cc1cfae376544de5c759cbbd3bb1a8fd1911002d26  schema/narrative.metamodel.schema.yaml
 5e5f34aae331c95533003e2241b3c3eaf2a506729199a1d25a347c38f9499052  schema/narrative.talk.schema.yaml
 f4fef90664f4ab35ba4061ae6afd7386a6d466e0f1816c1d45fef126bda4c0cb  schema/orchestration/narrative.film.schema.yaml
 29e1b23a8ee2c0d81e88b48b642e6ecbec8909ec9d82962b8679d9b9130cce7d  schema/orchestration/narrative.scenes.schema.yaml
@@ -93,11 +120,21 @@ f4fef90664f4ab35ba4061ae6afd7386a6d466e0f1816c1d45fef126bda4c0cb  schema/orchest
 e3af6f0891c59b4b8626ba9b23638b635193fe14aff7ebf7b94e9349c8314afc  schema/presentation/narrative.film-ir.schema.yaml
 35e6f2b8e689ce12f65b5f82b4c25c0c36212324f9bd14e3dba800f2eeb5c136  schema/presentation/narrative.presentation.schema.yaml
 a4734b44f3845b097d8dc90f6ca2f6ff051e0ffc9a08bc627ae19fdf6cc07c22  schema/presentation/narrative.visual-config.schema.yaml
+5f52c49556f626ae220e791bdcdb2b2bcbcaea08e93ef3b73c131abd7f70f437  semantic-checker/adapter.mjs
+cea728e0451c501c290e2c823ded13cc419ad78d35edfad1de1e86847cee8641  semantic-checker/cli.mjs
+6ed5012189de2a2f96c9fde893fbe14b35f085ed1035abc3bef83ebcf379718c  semantic-checker/index.mjs
+864901de122ae283b22a07224767fa45e16e16d3853e20ae0a07ae8585c365de  semantic-checker/README.md
+20cdbfe520201f8eb2464f0c9c3a4d0286a5dcbb0c1c2c3fbb5dc759cfef102d  semantic-checker/rules/asset-substitution-target-type.mjs
+286255189af64f092b56db8e6f5ba99b1422b6fbcb587cbfb668d6c28fcdf4eb  semantic-checker/rules/default.rules.yaml
+653004d8c17f962685f4185db337acc623477eba05ad3736835e9a14e7458ca2  semantic-checker/rules/extensions.rules.yaml
+2060026bb4af20d987a73d83eca9ec583cd182e9f5f48209e35fe4b1ef9e1b72  semantic-checker/rules/timebox-ordering.mjs
+bcb7445526c3986457be7f2b5f64a9d021c3f9c35b8d663e935b66a00a9b4802  semantic-checker/rules/unused-scene-in-variants.mjs
+69408c025cb573eb5720db4fd21624b38ce7a421067353c4cf2693256100c31b  semantic-checker/semantic-checker.test.mjs
 05906facc15087cbf26b6367f3fe5aa74387ab66f7fb58a67a16656cc72ca742  terms-apache/LICENSE-APACHE
 4ddc617c18982535f06b579502aba3c2f5a0aebe67183e741102aa924180b6d3  terms-fsl/LICENSE-FSL
-925d0f43f887128b0c0ca74a4bf4681002145f3fb4089746d02070449bf199fc  terms/LICENSE
-a67cceb2eee77feb718465aa2d678850a291b29ded3b1273e02a9761a5f7757e  tools-readme/README.md
-ff0ee29174a39075cfd10932af2afce8ad55e6acc9b0eb174dd3ae9a993c20d0  tools-terms/LICENSE
+75eb308f4d5b4ced26ad7dc3fb686b312a760a9807ea5ee28fb96f99c6943071  terms/LICENSE
+9f0bc4382aa31b80765f13a84d1552548b8b8671588b273ef813b6c48100498a  tools-readme/README.md
+643db09ba28eb1fb622d309d870ffc9e3c9208840fa9bdbb0c149177e42c50e1  tools-terms/LICENSE
 6bb18960cf4300f4d81f85b6b52cb78bb71647f0585145d35cac068758ab0dc9  validator/cli.mjs
 0558e17e094340004d85583a0ebeaa645d7210c4809effdf36744cc171bccc37  validator/core/baseline.mjs
 265158514f3a902312a15c7a34a955fdcfe6c193ded3e7a1a50a98cc0f48998f  validator/core/native-schema.mjs

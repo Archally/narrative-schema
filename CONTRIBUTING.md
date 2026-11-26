@@ -12,10 +12,11 @@ Use `git commit -s` to certify the [Developer Certificate of Origin 1.1](https:/
 | --- | --- |
 | `schema/`, `examples/`, and `docs/` | Apache-2.0 and DCO 1.1 |
 | `tools/validator/`, `tools/port/`, `tools/README.md`, and `tools/LICENSE` | Apache-2.0 and DCO 1.1 |
+| Narrative agent kit (paths in the [licence map](LICENSE)) | Apache-2.0 and DCO 1.1 |
 | All other paths designated Apache-2.0 in the [licence map](LICENSE) | Apache-2.0 and DCO 1.1 |
-| Paths expressly designated in the licence map as FSL tools | FSL-1.1-ALv2, DCO 1.1, and the additional consent below |
+| `tools/model-builder/`, `tools/next-id/`, `tools/semantic-checker/` (FSL tools) | FSL-1.1-ALv2, DCO 1.1, and the additional consent below |
 
-Apache-licensed contributions are submitted under Apache-2.0 with DCO sign-off. The additional consent applies exclusively to contributions to files expressly designated as FSL tools. This release contains no such tools. For changes to licence texts, open an issue.
+Apache-licensed contributions are submitted under Apache-2.0 with DCO sign-off. The additional consent applies exclusively to contributions to files expressly designated as FSL tools. For changes to licence texts, open an issue.
 
 ### Additional consent for FSL tools
 

@@ -26,7 +26,59 @@ jobs:
       - name: Validate worked example
         run: npm run validate:example
 
-      - name: Verify negative validator checks on disposable model copies
+      - name: Build worked example, suggest next IDs, and run semantic checks
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { spawnSync } from 'node:child_process';
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+
+          const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'narrative-ci-tools-'));
+          try {
+            const builtPath = path.join(scratch, 'public-deck.model.json');
+            const built = spawnSync(
+              process.execPath,
+              ['tools/model-builder/cli.mjs', 'examples/public-deck', '--pretty', '--output', builtPath],
+              { encoding: 'utf8' },
+            );
+            assert.equal(built.status, 0, built.stdout + built.stderr);
+
+            const nextClaim = spawnSync(
+              process.execPath,
+              ['tools/next-id/cli.mjs', builtPath, 'CLM'],
+              { encoding: 'utf8' },
+            );
+            assert.equal(nextClaim.status, 0, nextClaim.stdout + nextClaim.stderr);
+            assert.equal(nextClaim.stdout.trim(), 'CLM003');
+
+            const nextScene = spawnSync(
+              process.execPath,
+              ['tools/next-id/cli.mjs', builtPath, 'SC'],
+              { encoding: 'utf8' },
+            );
+            assert.equal(nextScene.status, 0, nextScene.stdout + nextScene.stderr);
+            assert.equal(nextScene.stdout.trim(), 'SC004');
+
+            const semantic = spawnSync(
+              process.execPath,
+              ['tools/semantic-checker/cli.mjs', 'examples/public-deck', '--strict', '--json'],
+              { encoding: 'utf8' },
+            );
+            assert.equal(semantic.status, 0, semantic.stdout + semantic.stderr);
+            const semanticReport = JSON.parse(semantic.stdout);
+            assert.equal(semanticReport.passed, true);
+            assert.equal(semanticReport.rules_loaded, 8);
+            assert.deepEqual(semanticReport.counts, { error: 0, warn: 0, info: 0 });
+
+            console.log('OK: built worked example, suggested CLM003/SC004, and passed all 8 semantic rules in strict mode.');
+          } finally {
+            fs.rmSync(scratch, { recursive: true, force: true });
+          }
+          EOF
+
+      - name: Verify negative validator and semantic checks on disposable model copies
         run: |
           node --input-type=module <<'EOF'
           import assert from 'node:assert/strict';
@@ -61,7 +113,28 @@ jobs:
             );
             assert.equal(badSchema.status, 1, `expected exit 1 on schema error, got ${badSchema.status}`);
 
-            console.log('OK: negative validator controls rejected broken reference and schema violation (exit 1).');
+            const badSemanticDir = path.join(scratch, 'bad-semantic');
+            fs.cpSync('examples/public-deck', badSemanticDir, { recursive: true });
+            const conceptsPath = path.join(badSemanticDir, 'knowledge/concepts.yaml');
+            const conceptsText = fs.readFileSync(conceptsPath, 'utf8');
+            fs.writeFileSync(
+              conceptsPath,
+              `${conceptsText}\n  - id: C099\n    term: "Orphan Control"\n    definition: "Synthetic unlinked concept."\n`,
+              'utf8',
+            );
+            const badSemantic = spawnSync(
+              process.execPath,
+              ['tools/semantic-checker/cli.mjs', badSemanticDir, '--strict', '--json'],
+              { encoding: 'utf8' },
+            );
+            assert.equal(badSemantic.status, 1, `expected exit 1 on strict semantic failure, got ${badSemantic.status}`);
+            const badSemanticReport = JSON.parse(badSemantic.stdout);
+            assert.ok(
+              badSemanticReport.issues.some((issue) => issue.ruleId === 'orphan-concepts' && issue.entityId === 'C099'),
+              `expected orphan-concepts on C099: ${badSemantic.stdout}`,
+            );
+
+            console.log('OK: negative controls rejected broken reference, schema violation, and orphan concept (exit 1).');
           } finally {
             fs.rmSync(scratch, { recursive: true, force: true });
           }
@@ -73,7 +146,7 @@ jobs:
       - name: Run release-identity checks
         run: npm run release:check
 
-      - name: Run port and integrity tool tests
+      - name: Run all standalone tool and integrity tests
         run: npm test
 
       - name: Verify shipped snapshot integrity and protected absences

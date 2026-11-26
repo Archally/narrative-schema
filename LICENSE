@@ -11,6 +11,8 @@ Apache License, Version 2.0 (Apache-2.0)
   schema/                     format definitions
   examples/                   examples and their documentation
   docs/                       reader documentation
+  .agents/, .claude/, .codex/, .cursor/  Narrative agent kit
+  AGENTS.md, CLAUDE.md        agent kit project instructions
   tools/validator/            standalone conformance validator
   tools/port/                 release and integrity tools
   tools/LICENSE               tool licence map
@@ -33,10 +35,22 @@ their own licences. See NOTICE for the dependency inventory.
 Functional Source License 1.1 with Apache 2.0 future licence
 ------------------------------------------------------------
 
-  LICENSE-FSL                 reference text (FSL-1.1-ALv2)
+  tools/model-builder/        builds a model's graph from its YAML files
+  tools/next-id/              suggests the next free identifier in a model
+  tools/semantic-checker/     model-quality rules and the adapter that feeds them
+  LICENSE-FSL                 licence text (FSL-1.1-ALv2)
 
-This release contains no FSL-licensed tools. A tool is subject to the FSL only
-when its path is expressly designated in this map.
+You may use, modify and redistribute these tools for any Permitted Purpose,
+which includes internal use, non-commercial education and research, and
+professional services you provide to others. You may not use them for a
+Competing Use. Each version converts to Apache-2.0 two years after its release.
+
+Apache-2.0 covers the format and what establishes conformance with it: the
+schema, the validator and the integrity tools. The FSL covers the tools that
+read a model for another purpose: building its graph, suggesting its
+identifiers and judging its quality. The rule engine itself is the separate
+Apache-2.0 package @archally/semantic-checker; what the FSL covers here is the
+Narrative rule set and its adapter.
 
 Models you author carry their own licence terms. Archally Pro is offered under
 separate terms.
