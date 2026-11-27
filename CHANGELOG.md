@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0]
+
+- Position events in story time and record prerequisites separately from the order in which scenes tell them.
+- Model story objects and record gains, transfers, uses and losses in events.
+- Describe how a character's presence changes within a scene.
+- Author an explicitly untimed reading outline without scene timeboxes or variant budgets.
+
 ## [1.6.0]
 
 - Model characters and record how each character is present in a scene.

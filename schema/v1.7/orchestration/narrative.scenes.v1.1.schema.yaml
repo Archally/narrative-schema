@@ -245,6 +245,13 @@ properties:
     $ref: "#/$defs/structure_framework"
     description: "The structural framework whose beats the scenes name in `beat`. Optional; a scene may name a beat only when it is set."
 
+  timing:
+    type: string
+    enum: [ untimed ]
+    description: >
+      Set to untimed for a reading outline whose scenes have no time budget. Scenes then carry no timebox, the intent format is reading_outline with no duration, and variants carry no duration, scene overrides or film settings. Leave it out for timed scenes, where every scene has a timebox.
+    examples: [ "untimed" ]
+
   scenes:
     description: "Record the shared steps of the argument in source order."
     type: array
@@ -293,7 +300,7 @@ properties:
             - min: 0.5
               target: 1.5
               max: 2
-          description: "Shared scene budget in fractional minutes. Keep the authored target here and put a room-specific adjustment in the variant override."
+          description: "Shared scene budget in fractional minutes. Keep the authored target here and put a room-specific adjustment in the variant override. Required unless the scenes file sets timing to untimed, where it is not allowed."
           $ref: "urn:narrative:metamodel:1.0.0#/$defs/timebox"
 
         covers:
@@ -358,7 +365,7 @@ properties:
                     $ref: "urn:narrative:metamodel:1.0.0#/$defs/refs"
                 required: [ id, kind, title ]
 
-      required: [ id, title, role, timebox, covers ]
+      required: [ id, title, role, covers ]
 
   graph:
     $ref: "#/$defs/scene_graph"
@@ -377,9 +384,22 @@ properties:
             label: "Continue to completion"
 
 required: [ version, narrative_arc, scenes, graph ]
+if:
+  required: [ timing ]
+  properties: { timing: { const: untimed } }
+then:
+  properties:
+    scenes:
+      items:
+        properties: { timebox: false }
+else:
+  properties:
+    scenes:
+      items:
+        required: [ timebox ]
 
 x-gdsm:
-  version: "1.0.0"
+  version: "1.1.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   plane: orchestration
   design_notes: >

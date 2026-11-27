@@ -3,6 +3,7 @@
 // Preserves the schema suite's format policy (Ajv2020 without `ajv-formats`) so
 // strict and compat validation verdicts remain deterministic across layouts.
 
+import { suppressConditionalWrapper } from './story-time.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
@@ -70,14 +71,15 @@ function walkSchemaFiles(dir) {
 }
 
 /**
- * @param {readonly { instancePath?: string, message?: string }[] | null | undefined} errors
+ * @param {readonly { instancePath?: string, message?: string, keyword: string, schemaPath: string, params: { failingKeyword?: string } }[] | null | undefined} errors
+ * @param {string} [resource]
  * @returns {{ instancePath: string, message: string, formatted: string }[]}
  */
-export function formatAjvErrors(errors) {
+export function formatAjvErrors(errors, resource) {
   if (!errors || errors.length === 0) {
     return [];
   }
-  return errors.map((err) => {
+  return errors.filter((err) => !suppressConditionalWrapper(err, resource)).map((err) => {
     const instancePath = err.instancePath || '/';
     const message = err.message ?? 'schema error';
     return {

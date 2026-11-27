@@ -114,23 +114,23 @@ $defs:
       $ref: "#/$defs/external_link"
 
 x-gdsm:
-  version: "1.6.0"
+  version: "1.7.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   suite_name: "narrative"
   suite_description: >
     Model one argument or story for delivery as a talk, a workshop with a deck, or a film. Intent and knowledge describe what the narrative conveys. Orchestration orders the scenes. Delivery supplies wording by language and occasion, assurance defines checks, and presentation supplies the visual form.
   design_rationale: >
-    One argument or story can support many deliverables. Scenes, claims, concepts, characters and story events are shared by every deliverable, so an edit reaches every deck and film that uses it. Words live only in the per-language scripts; structure that must survive a change of language (scenes, film lines, on-screen texts, shots) carries identifiers and no words. Time is derived where it can be: a deck scene has a budget in minutes, while a film shot takes its length from its lines, its texts or a design token, and an authored number only raises it. Visual styling belongs to presentation.
+    One argument or story can support many deliverables. Scenes, claims, concepts, characters and story events are shared by every deliverable, so an edit reaches every deck and film that uses it. Words live only in the per-language scripts; structure that must survive a change of language (scenes, film lines, on-screen texts, shots) carries identifiers and no words. Time is derived where it can be: a deck scene has a budget in minutes, while a film shot takes its length from its lines, its texts or a design token, and an authored number only raises it. A reading outline can declare its scenes untimed, and then has no time budget at all. Story time is a partial order between story events, kept apart from the scenes and positions that tell them. Visual styling belongs to presentation.
   status: review
   planes:
     - id: intent
       description: "Audience, goals, constraints and the north star of the narrative."
       schemas: [ "intent/narrative.intent.schema.yaml" ]
     - id: knowledge
-      description: "Concepts, claims, evidence, delivery assets, characters, their appearances, and story events."
+      description: "Concepts, claims, evidence, delivery assets, characters, their appearances, story events, their order in story time, and story objects with their holders."
       schemas: [ "knowledge/narrative.concepts.schema.yaml", "knowledge/narrative.claims.schema.yaml", "knowledge/narrative.evidence.schema.yaml", "knowledge/narrative.assets.schema.yaml", "knowledge/narrative.storyworld.schema.yaml" ]
     - id: orchestration
-      description: "Scene order, arc and timing; opt-in branching story graphs; a film's lines, on-screen texts and shots."
+      description: "Scene order, arc and timing or an untimed reading outline; opt-in branching story graphs; a film's lines, on-screen texts and shots."
       schemas: [ "orchestration/narrative.scenes.schema.yaml", "orchestration/narrative.scenes.v1.1.schema.yaml", "orchestration/narrative.film.schema.yaml" ]
     - id: delivery
       description: "Per-language scripts and per-occasion variants, including how a variant is cut as a film."
@@ -150,6 +150,7 @@ x-gdsm:
     A: { schema: "knowledge/narrative.assets.schema.yaml", entity: "Asset", description: "A delivery building block, including a picture." }
     CHR: { schema: "knowledge/narrative.storyworld.schema.yaml", entity: "Character", description: "A person or personified agent whose presence the story tracks." }
     EVT: { schema: "knowledge/narrative.storyworld.schema.yaml", entity: "Story event", description: "An occurrence in the story that a scene tells." }
+    OBJ: { schema: "knowledge/narrative.storyworld.schema.yaml", entity: "Story object", description: "A thing whose holder or availability the story's events change." }
     SC: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Scene", description: "One step in the telling of an argument or story." }
     SL: { schema: "orchestration/narrative.scenes.schema.yaml", entity: "Suggested slide", description: "A slide hint inside a scene." }
     TR: { schema: "orchestration/narrative.scenes.v1.1.schema.yaml", entity: "Transition", description: "An authored choice or default move between two scenes in an opt-in branching story graph." }

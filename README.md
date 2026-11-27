@@ -1,6 +1,6 @@
 # Archally Narrative Schema
 
-Narrative is a YAML format for modeling talks, presentations, and films. It connects audience goals, claims and evidence, scenes, and delivery scripts. The [JSON Schema definitions](schema/v1.6/) describe the format.
+Narrative is a YAML format for modeling talks, presentations, films, and reading outlines. It connects audience goals, claims and evidence, scenes, and delivery scripts. The [JSON Schema definitions](schema/v1.7/) describe the format.
 
 ## Quickstart
 
@@ -18,7 +18,7 @@ npm run check:semantic:example
 
 Explore the [worked examples](examples/README.md) and the [format and tools](docs/README.md).
 
-[Lighthouse Ladder](examples/storyworld-linear/narrative.yaml) is a four-scene example with two characters and two story events.
+[Lighthouse Ladder](examples/storyworld-linear/narrative.yaml) is a four-scene example with two characters and two story events. The [reading outline walkthrough](docs/2026-11-27-author-a-reading-outline.md) uses it to show how to track story time, visible entrances, and who holds an object. See the [1.7 migration notes](docs/2026-11-27-narrative-1-7-migration.md) for compatibility and timing requirements.
 
 ## Use it with your agent
 

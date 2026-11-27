@@ -86,14 +86,15 @@ properties:
     additionalProperties: false
     description: "State the limits shared by deliveries of this narrative."
     properties:
-      duration_minutes: { type: integer, minimum: 1, description: "Record the shared delivery time budget in minutes." }
+      duration_minutes: { type: integer, minimum: 1, description: "Record the shared delivery time budget in minutes. Required unless the format is reading_outline and the scenes file sets timing to untimed." }
       language: { type: string, description: "e.g., pl-PL, en-US" }
       tone: { type: string, enum: [ serious, pragmatic, playful, inspirational, mixed ], description: "Describe the intended manner of addressing the audience." }
       format:
         type: string
-        enum: [ lecture, workshop, keynote, internal_update, film, mixed ]
-        description: "How the narrative is delivered. `film` is a recorded film rather than a live session."
-        examples: [ "film" ]
+        enum: [ lecture, workshop, keynote, internal_update, film, mixed, reading_outline ]
+        description: >
+          How the narrative is delivered. `film` is a recorded film rather than a live session. `reading_outline` is a scene outline a reader follows; with untimed scenes it carries no duration.
+        examples: [ "film", "reading_outline" ]
       environment:
         description: "Describe the setting and conditions expected for delivery."
         type: string
@@ -102,7 +103,12 @@ properties:
         type: array
         description: "Accessibility commitments (captions, color contrast, etc.)."
         items: { type: string }
-    required: [ duration_minutes, language, format ]
+    required: [ language, format ]
+    if:
+      required: [ format ]
+      properties: { format: { const: reading_outline } }
+    else:
+      required: [ duration_minutes ]
 
   north_star:
     type: object
@@ -119,11 +125,11 @@ properties:
 required: [ version, topic_statement, audience, goals, constraints, north_star ]
 
 x-gdsm:
-  version: "1.3.0"
+  version: "1.4.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   plane: intent
   design_notes: >
-    The intent states the audience, goals and constraints a delivery must meet. The format `film` marks a narrative delivered as a recorded film; no film-only intent field is needed.
+    The intent states the audience, goals and constraints a delivery must meet. The format `film` marks a narrative delivered as a recorded film; no film-only intent field is needed. The format `reading_outline` with untimed scenes is the only intent without a duration.
   non_goals:
     - "Film-specific production settings, which belong to the film file, the variants and the theme"
   status: review

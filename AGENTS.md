@@ -13,6 +13,7 @@ does not restrict it.
   read `.agents/agents/narrative-modeler.md` and follow it. To run a command below, read <!-- public-docs-scan:allow Codex and Cursor read this path -->
   `.agents/commands/<name>.md` and follow it. <!-- public-docs-scan:allow Codex and Cursor read this path -->
 - **Cursor**: the `narrative-modeler` subagent (`.cursor/agents/narrative-modeler.md`); the commands below run as slash commands.
+- **Antigravity CLI**: ask it to follow `.agents/agents/narrative-modeler.md` and read the selected skill from `.agents/skills/`. <!-- public-docs-scan:allow Codex and Cursor read this path -->
 
 ## Skills - load on demand, do not read them all up front
 

@@ -40,7 +40,7 @@ properties:
           type: integer
           minimum: 1
           description: >
-            Minutes available for content, excluding questions. The validator compares the sum of the variant's effective scene timeboxes against this number, so a cut that does not fit its slot is an error rather than a discovery made in the room. For a spoken film cut it is also the budget its running-time estimate is compared with, in place of the narrative-wide intent duration.
+            Minutes available for content, excluding questions. The validator compares the sum of the variant's effective scene timeboxes against this number, so a cut that does not fit its slot is an error rather than a discovery made in the room. For a spoken film cut it is also the budget its running-time estimate is compared with, in place of the narrative-wide intent duration. Not allowed when the scenes file sets timing to untimed.
 
         language:
           type: string
@@ -83,7 +83,7 @@ properties:
                     timebox_minutes: 1
                     note: Use the short rollback walkthrough for this session.
               type: array
-              description: "Record a timing adjustment and its rationale for a selected scene. A variant override supplies the effective target for that occasion while the scene keeps its authored timebox."
+              description: "Record a timing adjustment and its rationale for a selected scene. A variant override supplies the effective target for that occasion while the scene keeps its authored timebox. Not allowed when the scenes file sets timing to untimed."
               items:
                 type: object
                 additionalProperties: false
@@ -128,7 +128,7 @@ properties:
           type: object
           additionalProperties: false
           description: >
-            How this occasion is rendered as a film. Present only on variants delivered as a film. The variant's language selects the script, and so the words of every line and on-screen text; the film file supplies the lines, texts and shots the variant's selected scenes hold.
+            How this occasion is rendered as a film. Present only on variants delivered as a film. The variant's language selects the script, and so the words of every line and on-screen text; the film file supplies the lines, texts and shots the variant's selected scenes hold. Not allowed when the scenes file sets timing to untimed.
           properties:
             voice:
               type: object
@@ -167,7 +167,7 @@ properties:
 required: [ version, variants ]
 
 x-gdsm:
-  version: "1.1.0"
+  version: "1.2.0"
   methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
   plane: delivery
   design_notes: >

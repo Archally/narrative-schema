@@ -533,6 +533,21 @@ function extractStoryworld(collector, pointer) {
     );
   });
 
+  asArray(pointer.content.story_objects).forEach((object, index) => {
+    if (!isRecord(object)) return;
+    const id = asNonEmptyString(object.id);
+    if (!id) return;
+    addEntity(collector, {
+      id,
+      entityType: 'story_object',
+      plane: 'knowledge',
+      pointerLabel: pointer.label,
+      name: asNonEmptyString(object.name) ?? id,
+      location: { file, path: `story_objects[${index}]` },
+      data: object,
+    });
+  });
+
   asArray(pointer.content.story_events).forEach((rawEvent, index) => {
     if (!isRecord(rawEvent)) {
       return;

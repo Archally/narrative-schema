@@ -1,0 +1,209 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:narrative:storyworld:1.0.0"
+title: "Narrative Storyworld"
+description: "Describe the characters who appear in a story and the events its scenes tell."
+type: object
+additionalProperties: false
+
+$defs:
+  appearance:
+    title: "Appearance"
+    description: "How one character is seen, heard, or mentioned in one scene."
+    type: object
+    additionalProperties: false
+    properties:
+      scene: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene in which the character appears, is heard, or is mentioned." }
+      presence:
+        type: string
+        enum: [ on_screen, heard, mentioned ]
+        description: >
+          Mark the character as visible, audible off screen, or only talked about. The first visible appearance is the character's entrance. When presence_sequence is given, this value summarizes it: on_screen if the character is visible at any point in the scene, otherwise heard if audible at any point, otherwise mentioned.
+      presence_sequence:
+        type: array
+        minItems: 2
+        description: >
+          Optional order in which the character's presence changes within the scene, such as heard and then on_screen. The scene still has one appearance entry, and presence keeps the summary that entrance checks read.
+        examples:
+          - [ heard, on_screen ]
+        items:
+          type: string
+          enum: [ on_screen, heard, mentioned ]
+      note: { type: string, description: "A short note on the character's part in the scene." }
+    required: [ scene, presence ]
+
+  character:
+    title: "Character"
+    description: "A person or personified agent whose presence the story tracks."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { type: string, pattern: "^CHR[0-9]{3}$", description: "Stable identifier that story events can reference." }
+      name: { type: string, minLength: 1, description: "Name shown in the cast and scene outline." }
+      summary: { type: string, description: "Short description of the character's role in the story." }
+      appearances:
+        type: array
+        description: "Record how the character is present or mentioned, with at most one entry per scene."
+        items: { $ref: "#/$defs/appearance" }
+      external_characters:
+        $ref: "urn:narrative:metamodel:1.0.0#/$defs/external_links"
+        description: "Entities in other models that this character represents, such as a persona or a person."
+    required: [ id, name ]
+
+  story_event:
+    title: "Story Event"
+    description: "Something that happens in the story and can matter to later events."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { type: string, pattern: "^EVT[0-9]{3}$", description: "Stable identifier that other story events can reference." }
+      title: { type: string, description: "Short label for the event." }
+      summary: { type: string, description: "Short account of what happens." }
+      occurs_in: { type: string, pattern: "^SC[0-9]{3}$", description: "Scene that tells the event." }
+      on_transitions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: >
+          In a branching story, the event occurs only when one of these transitions is taken. Each transition enters or leaves the scene that tells the event. If this field is absent, the event occurs on every visit to its scene.
+        items: { type: string, pattern: "^TR[0-9]{3}$" }
+      required_characters:
+        type: array
+        uniqueItems: true
+        description: "Characters the event depends on."
+        items: { type: string, pattern: "^CHR[0-9]{3}$" }
+      requires_events:
+        type: array
+        uniqueItems: true
+        description: "Earlier events this event depends on. A required event comes earlier in story time. Event dependencies must be acyclic."
+        items: { type: string, pattern: "^EVT[0-9]{3}$" }
+      recorded_by:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        description: >
+          State variables in the branching story that relate to this event. Each listed transition assigns every named variable. For an event that occurs on every visit to its scene, these names identify variables that later choices may read.
+        items: { type: string, pattern: "^[a-z][a-z0-9_]*$" }
+      before:
+        type: array
+        uniqueItems: true
+        description: >
+          Events that start after this event ends, or as it ends, in story time. The relation has a direction and must not form a cycle with before, requires_events or recounts_events. It is independent of the scenes that tell the events and of their telling order.
+        examples:
+          - [ EVT016 ]
+        items: { type: string, pattern: "^EVT[0-9]{3}$" }
+      overlaps:
+        type: array
+        uniqueItems: true
+        description: >
+          Events that happen at the same time as this event for at least part of their duration. The relation is symmetric, so one of the two events can list the pair. Two overlapping events cannot also be ordered by before, requires_events or recounts_events.
+        examples:
+          - [ EVT016 ]
+        items: { type: string, pattern: "^EVT[0-9]{3}$" }
+      recounts_events:
+        type: array
+        uniqueItems: true
+        description: >
+          Earlier events that this event tells about, such as a character recalling them. Each recounted event keeps its own identity and its own place in story time, before this event. occurs_in still names the scene that tells this event. A repeated visit to that scene repeats the telling and does not repeat the recounted events.
+        examples:
+          - [ EVT040 ]
+        items: { type: string, pattern: "^EVT[0-9]{3}$" }
+      telling_position:
+        type: integer
+        minimum: 1
+        description: >
+          Position of this event in the telling of its scene, counted from 1, with gaps allowed. Positions order the events of one scene regardless of their order in the file. Two events that can occur in the same visit to the scene cannot share a position. The position changes neither story time nor event dependencies.
+        examples: [ 2 ]
+      object_effects:
+        type: array
+        minItems: 1
+        description: >
+          Changes this event makes to story objects, and their uses, applied in list order. Who holds an object after an effect follows from the effects of the events before it in story time.
+        examples:
+          - - { object: OBJ002, action: transfer, from: CHR001, to: CHR011 }
+            - { object: OBJ002, action: transfer, from: CHR011, to: CHR001 }
+        items: { $ref: "#/$defs/object_effect" }
+    required: [ id, title, occurs_in ]
+
+  story_object:
+    title: "Story Object"
+    description: "A thing whose holder or availability matters to later events, such as one of a pair of shoes."
+    type: object
+    additionalProperties: false
+    properties:
+      id: { type: string, pattern: "^OBJ[0-9]{3}$", description: "Stable identifier that object effects reference.", examples: [ "OBJ001" ] }
+      name: { type: string, minLength: 1, description: "Name shown when an object's holder is reported.", examples: [ "Left silver shoe" ] }
+      summary: { type: string, description: "Short description of the object and why the story tracks it.", examples: [ "One of the two shoes Dorothy uses to return home." ] }
+      initial_holder:
+        type: string
+        pattern: "^CHR[0-9]{3}$"
+        description: "Character holding the object when the story begins. Leave it out when nobody holds the object at the start."
+        examples: [ "CHR010" ]
+    required: [ id, name ]
+
+  object_effect:
+    title: "Object Effect"
+    description: >
+      One change an event makes to a story object, or one use of it. acquire gives an object that nobody holds to `to`. transfer moves it from `from` to `to`. lose takes it from `from` and leaves it lost. regain returns a lost object to `to`, its last holder. use records that `by` uses the object without changing who holds it.
+    type: object
+    additionalProperties: false
+    properties:
+      object: { type: string, pattern: "^OBJ[0-9]{3}$", description: "Story object the effect applies to.", examples: [ "OBJ002" ] }
+      action:
+        type: string
+        enum: [ acquire, transfer, lose, regain, use ]
+        description: "What happens to the object. The action decides which of from, to and by the effect names."
+        examples: [ "transfer" ]
+      from: { type: string, pattern: "^CHR[0-9]{3}$", description: "Character holding the object before a transfer or a loss.", examples: [ "CHR001" ] }
+      to: { type: string, pattern: "^CHR[0-9]{3}$", description: "Character holding the object after an acquisition, a transfer or a regain.", examples: [ "CHR011" ] }
+      by: { type: string, pattern: "^CHR[0-9]{3}$", description: "Character using the object.", examples: [ "CHR001" ] }
+      note: { type: string, description: "A short note on how the effect happens.", examples: [ "The Witch trips Dorothy and takes one shoe." ] }
+    required: [ object, action ]
+    allOf:
+      - if: { required: [ action ], properties: { action: { const: acquire } } }
+        then: { required: [ to ], properties: { from: false, by: false } }
+      - if: { required: [ action ], properties: { action: { const: transfer } } }
+        then: { required: [ from, to ], properties: { by: false } }
+      - if: { required: [ action ], properties: { action: { const: lose } } }
+        then: { required: [ from ], properties: { to: false, by: false } }
+      - if: { required: [ action ], properties: { action: { const: regain } } }
+        then: { required: [ to ], properties: { from: false, by: false } }
+      - if: { required: [ action ], properties: { action: { const: use } } }
+        then: { required: [ by ], properties: { from: false, to: false } }
+
+properties:
+  version:
+    type: string
+    const: "1.0.0"
+    description: "Document version for the storyworld."
+  characters:
+    type: array
+    description: "Cast of the story."
+    items: { $ref: "#/$defs/character" }
+  story_events:
+    type: array
+    description: "Events told by the story's scenes."
+    items: { $ref: "#/$defs/story_event" }
+  story_objects:
+    type: array
+    description: "Objects whose holder or availability the story's events change."
+    items: { $ref: "#/$defs/story_object" }
+
+required: [ version ]
+anyOf:
+  - required: [ characters ]
+    properties:
+      characters: { type: array, minItems: 1 }
+  - required: [ story_events ]
+    properties:
+      story_events: { type: array, minItems: 1 }
+
+x-gdsm:
+  version: "1.1.0"
+  methodology: "GDSM v1.0 (Goal-Driven Schema Modeling)"
+  plane: knowledge
+  design_notes: >
+    Story time and telling are separate. occurs_in and telling_position describe the telling; before, overlaps, recounts_events and requires_events describe story time as a partial order (Time Interval and Situation patterns). before covers an event ending before or as another starts; overlaps is symmetric and covers any shared duration. Appearance keeps one entry per character and scene and adds an optional ordered presence list (Sequence pattern). Object effects are an n-ary relation between an event, an object and its participants; the holder at any effect follows from the effects ordered by story time.
+  non_goals:
+    - "A shared clock, absolute dates or durations for story events"
+    - "Object locations, quantities or states other than who holds an object and whether it is lost"
+  status: review

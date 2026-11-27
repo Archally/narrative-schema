@@ -3,6 +3,7 @@
 // Runs JSON Schema 2020-12, duplicate-ID, cross-file reference, structure, branching-graph,
 // delivery-variant, film, picture, external-link, and gap checks into one structured report.
 
+import { checkOutlineTiming, checkStoryTime, isUntimed } from './story-time.mjs';
 import { extractNarrativeOccurrences } from './occurrences.mjs';
 import { formatAjvErrors } from './native-schema.mjs';
 import { loadValidationInputs } from './source-status.mjs';
@@ -697,7 +698,7 @@ export function collectGraphFindings(pointerMap, findings) {
   });
 }
 
-const STORYWORLD_ENTITY_TYPES = new Set(['character', 'story_event']);
+const STORYWORLD_ENTITY_TYPES = new Set(['character', 'story_event', 'story_object']);
 
 const STORYWORLD_EXPLICIT_REF_RELATIONS = new Set([
   'appears_in_scene',
@@ -891,6 +892,9 @@ function collectStoryworldFindings(pointerMap, entityOccurrences, findings) {
       transitionsById.set(trId, tr);
     }
   }
+
+  checkStoryTime(storyworldDoc, transitionsById, (target, kind, path) =>
+    checkTypedRef(target, kind, swFile, path, 'knowledge.storyworld'), pushSwError);
 
   /** @type {Set<string>} */
   const seenCharacterIds = new Set();
@@ -1215,6 +1219,8 @@ function collectVariantFindings(pointerMap, findings) {
       }
       overrides.set(ref, rawOverride);
     });
+
+    if (isUntimed(scenesDoc)) return;
 
     const durationMinutes = rawVariant.duration_minutes;
     if (typeof durationMinutes !== 'number') {
@@ -1687,6 +1693,7 @@ function collectFilmFindings(pointerMap, schemaBackedPointers, findings) {
 
   const intentDoc = getDoc(pointerMap, 'intent');
   const intentConstraints = isRecord(intentDoc?.constraints) ? intentDoc.constraints : undefined;
+  const timed = !isUntimed(getDoc(pointerMap, 'orchestration.scenes'));
   const intentMinutes = typeof intentConstraints?.duration_minutes === 'number'
     ? intentConstraints.duration_minutes
     : undefined;
@@ -1722,7 +1729,7 @@ function collectFilmFindings(pointerMap, schemaBackedPointers, findings) {
           ? `Film check 6: variant ${cut.label} is in language ${language}, and no script declares voice.language ${language}`
           : `Film check 6: variant ${cut.label} declares no language, so no script can word it`,
       );
-      if (cut.source && SPOKEN.has(cut.source)) {
+      if (timed && cut.source && SPOKEN.has(cut.source)) {
         findings.push({
           layer: 'film',
           code: 'film_timing_no_script',
@@ -1782,7 +1789,7 @@ function collectFilmFindings(pointerMap, schemaBackedPointers, findings) {
         );
       }
 
-      if (cut.source && SPOKEN.has(cut.source)) {
+      if (timed && cut.source && SPOKEN.has(cut.source)) {
         const voice = isRecord(script.doc.voice) ? script.doc.voice : undefined;
         const pacing = isRecord(voice?.pacing) ? voice.pacing : {};
         const wpm = pacing.words_per_minute_target;
@@ -1918,7 +1925,7 @@ function collectFilmFindings(pointerMap, schemaBackedPointers, findings) {
       }
     }
 
-    if (cut.source === 'none') {
+    if (timed && cut.source === 'none') {
       findings.push({
         layer: 'film',
         code: 'film_timing_voiceless_info',
@@ -2263,7 +2270,7 @@ function validateLoadedNarrative(source, registry, schemaBackedPointers, mode) {
     filesChecked += 1;
     const validatePlane = registry.getValidator(pointer.schemaUrn);
     if (validatePlane && !validatePlane(pointer.content)) {
-      for (const err of formatAjvErrors(validatePlane.errors)) {
+      for (const err of formatAjvErrors(validatePlane.errors, pointer.schemaUrn)) {
         schemaFindings.push({
           layer: 'schema',
           code: 'schema_violation',
@@ -2333,6 +2340,21 @@ function validateLoadedNarrative(source, registry, schemaBackedPointers, mode) {
   collectStructureFindings(pointerMap, registry.getScenesSchema(scenesPointer?.schemaUrn), otherFindings);
   collectGraphFindings(pointerMap, otherFindings);
   collectStoryworldFindings(pointerMap, occurrences.entityOccurrences, otherFindings);
+  checkOutlineTiming(
+    getDoc(pointerMap, 'orchestration.scenes'),
+    getDoc(pointerMap, 'intent'),
+    getDoc(pointerMap, 'delivery.variants'),
+    (code, label, path, message) => otherFindings.push({
+      layer: 'timing',
+      code,
+      severity: 'error',
+      file: getFile(pointerMap, label),
+      path,
+      pointerLabel: label,
+      section: 'cross',
+      message,
+    }),
+  );
   collectVariantFindings(pointerMap, otherFindings);
   collectFilmFindings(pointerMap, schemaBackedPointers, otherFindings);
   collectPictureFindings(pointerMap, otherFindings);

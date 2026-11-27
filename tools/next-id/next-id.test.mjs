@@ -38,6 +38,7 @@ const EXPECTED_ACTIVE_PREFIXES = [
   'INT',
   'LN',
   'N',
+  'OBJ',
   'OT',
   'SC',
   'SH',
